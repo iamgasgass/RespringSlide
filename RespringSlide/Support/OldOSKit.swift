@@ -74,19 +74,11 @@ enum OldOSFont {
         return UIFont.systemFont(ofSize: size)
     }
 
-    private static var cache: [String: Font] = [:]
-
     private static func resolve(_ names: [String], size: CGFloat, weight: Font.Weight) -> Font {
-        let key = "\(names.first ?? "system")-\(size)"
-        if let cached = cache[key] { return cached }
-
-        var resolved = Font.system(size: size, weight: weight)
         for name in names where UIFont(name: name, size: size) != nil {
-            resolved = Font.custom(name, fixedSize: size)
-            break
+            return Font.custom(name, fixedSize: size)
         }
-        cache[key] = resolved
-        return resolved
+        return Font.system(size: size, weight: weight)
     }
 }
 
@@ -251,6 +243,7 @@ struct OldOSPinstripeBackground: View {
 // MARK: - Keyboard
 
 extension View {
+    @MainActor
     func oldOSHideKeyboard() {
         UIApplication.shared.sendAction(
             #selector(UIResponder.resignFirstResponder),
@@ -259,6 +252,7 @@ extension View {
     }
 }
 
+@MainActor
 func oldOSHideKeyboard() {
     UIApplication.shared.sendAction(
         #selector(UIResponder.resignFirstResponder),
@@ -272,6 +266,7 @@ func oldOSHideKeyboard() {
 /// ignore it returns zero, which pushed the chrome under the Dynamic Island.
 /// The window is the only reliable source, so it is queried directly and
 /// refreshed when the interface geometry changes.
+@MainActor
 enum OldOSScreen {
     static var safeArea: EdgeInsets {
         let windows = UIApplication.shared.connectedScenes
@@ -293,6 +288,7 @@ enum OldOSScreen {
 }
 
 /// Keeps a live copy of the window safe area for views that draw edge to edge.
+@MainActor
 final class OldOSSafeArea: ObservableObject {
     @Published private(set) var insets: EdgeInsets = OldOSScreen.safeArea
 
@@ -307,12 +303,12 @@ final class OldOSSafeArea: ObservableObject {
 
         observers = names.map { name in
             center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                self?.refresh()
+                MainActor.assumeIsolated { self?.refresh() }
             }
         }
     }
 
-    deinit {
+    isolated deinit {
         observers.forEach { NotificationCenter.default.removeObserver($0) }
     }
 
