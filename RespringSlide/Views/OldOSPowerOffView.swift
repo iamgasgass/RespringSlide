@@ -23,7 +23,6 @@ struct OldOSPowerOffView: View {
     }
     /// Classic OldSafari aluminium buttons in light mode, graphite in dark.
     private var buttonType: OldOSButtonType { isDark ? .black : .gray }
-    private var barTheme: OldOSSafariTheme { OldOSSafariTheme.theme(isPrivate: isDark) }
 
     var body: some View {
         GeometryReader { geometry in
@@ -42,7 +41,7 @@ struct OldOSPowerOffView: View {
                 VStack(spacing: 0) {
                     OldOSTitleBar(
                         title: "RespringSlide",
-                        theme: barTheme,
+                        theme: .privateBrowsing,
                         topInset: max(OldOSScreen.safeArea.top, 20)
                     )
 

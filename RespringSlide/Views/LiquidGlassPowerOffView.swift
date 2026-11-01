@@ -43,15 +43,17 @@ struct LiquidGlassPowerOffView: View {
                 .ignoresSafeArea()
 
                 VStack(spacing: 0) {
+                    // Large navigation title, exactly like the native Settings.
                     Text("RespringSlide")
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
                         .foregroundStyle(glyphColor)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                        .padding(.top, 4)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
 
                     respringIndicator
-                        .padding(.top, 20)
+                        .padding(.top, 24)
 
                     slideControl(width: trackWidth, height: trackHeight)
                         .padding(.top, 26)

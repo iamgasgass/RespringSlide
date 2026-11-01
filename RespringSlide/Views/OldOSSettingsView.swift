@@ -29,7 +29,7 @@ struct OldOSSettingsView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                OldOSTitleBar(title: "Impostazioni", theme: theme, topInset: topInset)
+                OldOSTitleBar(title: "Impostazioni", theme: .privateBrowsing, topInset: topInset)
 
                 ScrollView {
                     VStack(spacing: 0) {
