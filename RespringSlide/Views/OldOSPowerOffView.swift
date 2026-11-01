@@ -21,6 +21,8 @@ struct OldOSPowerOffView: View {
     private var vignette: Color {
         isDark ? Color.oldOS(42, 44, 48).opacity(0.55) : Color.black.opacity(0.06)
     }
+    /// Classic OldSafari aluminium buttons in light mode, graphite in dark.
+    private var buttonType: OldOSButtonType { isDark ? .black : .gray }
 
     var body: some View {
         GeometryReader { geometry in
@@ -58,6 +60,7 @@ struct OldOSPowerOffView: View {
                         message: "La tecnica può bloccare WebKit o riavviare SpringBoard, ma non è garantita su ogni versione di iOS. Salva prima il tuo lavoro.",
                         cancelTitle: "Annulla",
                         confirmTitle: "Avvia respring",
+                        isDark: isDark,
                         onCancel: {
                             showingAlert = false
                             resetSlider()
@@ -87,7 +90,7 @@ struct OldOSPowerOffView: View {
         .shadow(color: .black.opacity(0.65), radius: 0, x: 0, y: -0.9)
         .padding(.horizontal, 20)
         .frame(height: 38)
-        .background(iOS6GlossCapsule(type: .black))
+        .background(iOS6GlossCapsule(type: buttonType))
     }
 
     // MARK: - Slide to power off (OldOS `lock_footer` slider, in red)
@@ -216,7 +219,7 @@ struct OldOSPowerOffView: View {
                 .shadow(color: .black.opacity(0.7), radius: 0, x: 0, y: -1)
                 .frame(maxWidth: .infinity)
                 .frame(height: 50)
-                .background(iOS6GlossButton(type: .black))
+                .background(iOS6GlossButton(type: buttonType))
         }
         .buttonStyle(.plain)
         .frame(width: width)

@@ -24,6 +24,11 @@ struct OldOSPanelPointer: Shape {
 struct OldOSEllipsisButton: View {
     var action: () -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
+
+    /// Classic OldSafari aluminium in light mode, graphite in dark.
+    private var type: OldOSButtonType { colorScheme == .dark ? .black : .gray }
+
     var body: some View {
         Button {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -37,7 +42,7 @@ struct OldOSEllipsisButton: View {
                 .frame(width: 52, height: 32)
                 .oldOSInnerShadowBackground(
                     RoundedRectangle(cornerRadius: 5.5),
-                    oldOSButtonGradient(.black),
+                    oldOSButtonGradient(type),
                     radius: 0.8,
                     offset: CGPoint(x: 0, y: 0.6),
                     intensity: 0.7

@@ -13,6 +13,15 @@ struct SettingsView: View {
     }
 
     var body: some View {
+        if settings.skin == .oldOS {
+            // iOS 6 / OldOS settings when the OldOS skin is active.
+            OldOSSettingsView()
+        } else {
+            nativeSettings
+        }
+    }
+
+    private var nativeSettings: some View {
         NavigationStack {
             Form {
                 // MARK: Aspetto
