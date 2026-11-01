@@ -1,37 +1,83 @@
-# Respring
+# RespringSlide
 
-App iOS che riavvia SpringBoard con **lo stesso metodo** di [jailbreak.party/respring](https://jailbreak.party/respring): la pagina web pubblica di [neonmodder123](https://github.com/neonmodder123/neonmodder123.github.io) (MIT).
+A minimal iOS respring experiment with a full-screen, power-off-style slider and native SwiftUI Liquid Glass styling.
 
-Non è un jailbreak e non scrive file di sistema. Chiude e riavvia SpringBoard, così un tweak o un font già applicato torna visibile. Se il dispositivo è jailbroken, il jailbreak resta attivo: è un respring, non un reboot.
+- **UI:** Italian, black full-screen layout, Dynamic-Island-safe Liquid Glass respring capsule, screenshot-proportioned draggable power control, and bottom cancel/reset button. Dimensions scale from the supplied 709 × 1536 px reference (slider 591 × 168 px; thumb 144 × 144 px; cancel 144 × 144 px).
+- **Glass:** SwiftUI `glassEffect` / interactive Liquid Glass controls (iOS 26+ SDK).
+- **Engine:** local `WKWebView` document that reproduces the iframe/backdrop-filter/WebKit pressure technique associated with `jailbreak.party/respring`.
+- **Build:** XcodeGen `project.yml` + GitHub Actions `.github/workflows/build.yml`.
+- **Output:** unsigned `RespringSlide-unsigned.ipa` artifact.
 
-Funziona da iOS 26 in poi (Liquid Glass), iPhone e iPad. L’interfaccia è lo slider di spegnimento di iOS 27: a fine corsa non spegne il telefono, avvia il respring. Su alcune versioni la pagina in Safari è più efficace della web view interna.
+## Important limitations
 
-## Cosa contiene la repo
+This is an experimental WebKit-triggered respring attempt, **not an Apple-supported API**. iOS does not expose a public API that lets an ordinary App Store app restart SpringBoard. Depending on the precise iOS build, device, WebKit process policy, and memory pressure, this technique may only terminate the WebContent process or app, may do nothing, or may cause SpringBoard to restart. It is not guaranteed on iOS 27.0.1 or other releases.
 
-| File | Ruolo |
-| --- | --- |
-| `project.yml` | Progetto XcodeGen |
-| `.github/workflows/build.yml` | Build su GitHub Actions, IPA **non firmata** da Apple |
-| `Respring/` | App SwiftUI + `respring.html` |
+The embedded loop is only started after the user completes the slider and explicitly confirms. A 15-second watchdog stops the loop if SpringBoard has not restarted. Save open documents and data before testing. Do not use this as a substitute for a normal restart or a recovery method.
 
-## IPA non firmata, da GitHub
+The IPA produced by this workflow is **unsigned**. It cannot be installed directly on a stock iPhone until signed with a valid certificate or an appropriate sideloading workflow. This repository does not contain certificates, provisioning profiles, or signing secrets.
 
-1. Crea un repository vuoto (branch `main`).
-2. Carica **il contenuto** di questa cartella, non una cartella annidata. `project.yml` deve stare nella root.
-3. Apri **Actions**. Il workflow *Build unsigned IPA* parte al push. Puoi anche lanciarlo a mano con *Run workflow*.
-4. A fine build scarica l’artifact **Respring-unsigned** (`Respring-unsigned.ipa`).
+## Build locally
 
-Il runner è `macos-26` (Xcode 26, serve per `glassEffect`) con XcodeGen e `xcodebuild` in Release, `CODE_SIGNING_ALLOWED=NO`. L’IPA è uno zip `Payload/Respring.app` senza firma Apple.
+Requirements: Xcode 27, iOS 26+ SDK, and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
 
-## Installazione
+```sh
+brew install xcodegen
+xcodegen generate --spec project.yml
+xcodebuild \
+  -project RespringSlide.xcodeproj \
+  -scheme RespringSlide \
+  -configuration Release \
+  -sdk iphoneos \
+  -destination 'generic/platform=iOS' \
+  -derivedDataPath build \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  CODE_SIGN_IDENTITY='' \
+  clean build
+```
 
-L’IPA va rifirmata dal tool che usi sul tuo dispositivo:
+Package the app into an unsigned IPA:
 
-- Sideloadly, Feather, Esign, GBox, LiveContainer
-- TrollStore, se la tua versione di iOS lo supporta
+```sh
+mkdir -p staging/Payload
+cp -R build/Build/Products/Release-iphoneos/RespringSlide.app staging/Payload/
+(cd staging && zip -qry ../RespringSlide-unsigned.ipa Payload)
+```
 
-Bundle id: `local.respring.app`. Se il sideloader chiede un id libero, cambialo in `project.yml` (`PRODUCT_BUNDLE_IDENTIFIER`) e rifai la build.
+## Build on GitHub Actions
 
-## Credito
+1. Create an empty repository on GitHub and upload/push this folder.
+2. Push to `main`, create a pull request, or run **Actions → Build unsigned IPA → Run workflow**.
+3. Open the completed workflow run and download the `RespringSlide-unsigned-ipa` artifact.
+4. Push a tag such as `v1.0.0` to attach the IPA to a GitHub Release automatically.
 
-Il metodo di respring è di **neonmodder123**, licenza MIT. Va mantenuto il credito nel file `Respring/respring.html` se lo modifichi.
+Example first push:
+
+```sh
+git init -b main
+git add .
+git commit -m "Initial RespringSlide project"
+git remote add origin https://github.com/USERNAME/RespringSlide.git
+git push -u origin main
+```
+
+## Project structure
+
+```text
+.
+├── .github/workflows/build.yml
+├── RespringSlide/
+│   ├── Assets.xcassets/AppIcon.appiconset/
+│   ├── Respring/RespringPayloadView.swift
+│   ├── Views/PowerOffView.swift
+│   └── RespringSlideApp.swift
+└── project.yml
+```
+
+## Credits and references
+
+- Original landing page: <https://jailbreak.party/respring> (the site is now closed).
+- Public Swift implementation documenting the WebKit technique and attribution to neonmodder123: <https://github.com/rooootdev/mond/blob/main/mond/helpers/utils.swift>.
+- Apple's documentation for the SwiftUI Liquid Glass API: <https://developer.apple.com/documentation/swiftui/view/glasseffect(_:in:)>.
+
+The UI is a SwiftUI recreation based on the supplied screenshot, not copied Apple source code. The control dimensions are proportionally scaled from that image, and the top capsule is intentionally placed in the safe area below the Dynamic Island. The project scaffold here is original. The experimental WebKit strategy is attributed to its upstream research; this repository does not claim that technique as original work.
