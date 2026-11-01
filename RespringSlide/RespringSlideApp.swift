@@ -4,7 +4,7 @@ import SwiftUI
 struct RespringSlideApp: App {
     var body: some Scene {
         WindowGroup {
-            PowerOffView()
+            RootPowerView()
                 .preferredColorScheme(.dark)
         }
     }
