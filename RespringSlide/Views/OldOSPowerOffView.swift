@@ -1,18 +1,16 @@
 import SwiftUI
 import UIKit
 
-/// The "OldOS" skin: a maniacally faithful recreation of the iOS 6
-/// "slide to power off" screen, drawn with the OldSafari / OldOS appearance
-/// kit (`OldOSKit` + `OldSafariPalette`) so the palette, glossy sheet-metal
-/// controls and 2012 typography match the OldSafari project exactly. It is laid
-/// out to run full screen on modern iOS/iPadOS devices while keeping the iOS 6
-/// look. Behaviour (slide → confirm → respring) is identical to the Liquid
-/// Glass skin; engine state is owned by the parent.
+/// The "OldOS" skin: a faithful recreation of the iOS 6 "slide to power off"
+/// screen, drawn with the OldSafari / OldOS appearance kit (`OldOSKit` +
+/// `OldSafariPalette`) so the palette, glossy sheet-metal controls and 2012
+/// typography match the OldSafari project. Behaviour (slide → optional confirm
+/// → respring) is shared with the Liquid Glass skin.
 struct OldOSPowerOffView: View {
     let isRunning: Bool
     let onArmed: () -> Void
 
-    @StateObject private var safeArea = OldOSSafeArea()
+    @EnvironmentObject private var settings: AppSettings
 
     @State private var sliderOffset: CGFloat = 0
     @State private var showingAlert = false
@@ -22,8 +20,6 @@ struct OldOSPowerOffView: View {
             let w = geometry.size.width
             let trackWidth = min(w - 44, 560)
             let trackHeight: CGFloat = 74
-            let topInset = max(safeArea.insets.top, 20)
-            let bottomInset = max(safeArea.insets.bottom, 16)
 
             ZStack {
                 // iOS 6 power-off backdrop: near-black with a faint top vignette.
@@ -36,7 +32,7 @@ struct OldOSPowerOffView: View {
 
                 VStack(spacing: 0) {
                     respringIndicator
-                        .padding(.top, topInset + 8)
+                        .padding(.top, 8)
 
                     slideToPowerOff(width: trackWidth, height: trackHeight)
                         .padding(.top, 26)
@@ -44,7 +40,7 @@ struct OldOSPowerOffView: View {
                     Spacer(minLength: 0)
 
                     cancelButton(width: trackWidth)
-                        .padding(.bottom, bottomInset + 20)
+                        .padding(.bottom, 20)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -69,7 +65,6 @@ struct OldOSPowerOffView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Top indicator ("the whole bubble" in iOS 6 gloss)
@@ -116,7 +111,6 @@ struct OldOSPowerOffView: View {
                     .padding(0.5)
             )
             .overlay(
-                // Thin top sheen.
                 Capsule()
                     .fill(LinearGradient(
                         colors: [Color.white.opacity(0.10), .clear],
@@ -125,8 +119,7 @@ struct OldOSPowerOffView: View {
                     .allowsHitTesting(false)
             )
 
-            // Single "scorri per spegnere" label, centred in the track, with a
-            // continuous iOS 6 shine sweep.
+            // Single "scorri per spegnere" label, centred, continuous iOS 6 shine.
             Group {
                 if isRunning {
                     Text("Respring in corso")
@@ -155,12 +148,12 @@ struct OldOSPowerOffView: View {
                         }
                         .onEnded { _ in
                             guard !isRunning else { return }
-                            if travel > 0 && sliderOffset >= travel * 0.84 {
-                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                            if travel > 0 && sliderOffset >= travel * CGFloat(settings.threshold) {
+                                settings.tap(.medium)
                                 withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
                                     sliderOffset = travel
                                 }
-                                withAnimation(.easeIn(duration: 0.15)) { showingAlert = true }
+                                armOrConfirm()
                             } else {
                                 withAnimation(.spring(response: 0.42, dampingFraction: 0.76)) {
                                     sliderOffset = 0
@@ -178,7 +171,7 @@ struct OldOSPowerOffView: View {
 
     private func cancelButton(width: CGFloat) -> some View {
         Button {
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            settings.tap()
             resetSlider()
         } label: {
             Text("Annulla")
@@ -197,6 +190,14 @@ struct OldOSPowerOffView: View {
     }
 
     // MARK: - Behaviour
+
+    private func armOrConfirm() {
+        if settings.requireConfirmation {
+            withAnimation(.easeIn(duration: 0.15)) { showingAlert = true }
+        } else {
+            onArmed()
+        }
+    }
 
     private func resetSlider() {
         guard !isRunning else { return }

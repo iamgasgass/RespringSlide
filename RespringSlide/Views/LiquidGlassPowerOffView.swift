@@ -8,12 +8,11 @@ import SwiftUI
 /// Layout (bubble / slider / cancel positions and sizes) is identical to the
 /// OldOS skin. A single "scorri per spegnere" label is centred in the track
 /// with a continuous shine, and the glass X cancel button sits at the bottom.
-/// Engine state is owned by the parent so both skins share it.
 struct LiquidGlassPowerOffView: View {
     let isRunning: Bool
     let onArmed: () -> Void
 
-    @StateObject private var safeArea = OldOSSafeArea()
+    @EnvironmentObject private var settings: AppSettings
 
     @State private var sliderOffset: CGFloat = 0
     @State private var showingConfirmation = false
@@ -22,12 +21,9 @@ struct LiquidGlassPowerOffView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            // Shared layout metrics — identical to OldOSPowerOffView.
             let w = geometry.size.width
             let trackWidth = min(w - 44, 560)
             let trackHeight: CGFloat = 74
-            let topInset = max(safeArea.insets.top, 20)
-            let bottomInset = max(safeArea.insets.bottom, 16)
 
             ZStack {
                 Color.black.ignoresSafeArea()
@@ -42,7 +38,7 @@ struct LiquidGlassPowerOffView: View {
 
                 VStack(spacing: 0) {
                     respringIndicator
-                        .padding(.top, topInset + 8)
+                        .padding(.top, 8)
 
                     slideControl(width: trackWidth, height: trackHeight)
                         .padding(.top, 26)
@@ -51,7 +47,7 @@ struct LiquidGlassPowerOffView: View {
 
                     cancelButton
                         .frame(width: 64, height: 64)
-                        .padding(.bottom, bottomInset + 20)
+                        .padding(.bottom, 20)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -71,7 +67,6 @@ struct LiquidGlassPowerOffView: View {
                 Text("La tecnica può bloccare WebKit o riavviare SpringBoard, ma non è garantita su ogni versione di iOS. Salva prima il tuo lavoro.")
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     /// The top bubble, same "⟳ Respring" content as the OldOS skin, rendered in
@@ -132,11 +127,12 @@ struct LiquidGlassPowerOffView: View {
                     }
                     .onEnded { _ in
                         guard !isRunning else { return }
-                        if travel > 0 && sliderOffset >= travel * 0.84 {
+                        if travel > 0 && sliderOffset >= travel * CGFloat(settings.threshold) {
+                            settings.tap(.medium)
                             withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
                                 sliderOffset = travel
                             }
-                            showingConfirmation = true
+                            armOrConfirm()
                         } else {
                             withAnimation(.spring(response: 0.42, dampingFraction: 0.76)) {
                                 sliderOffset = 0
@@ -163,6 +159,14 @@ struct LiquidGlassPowerOffView: View {
         .disabled(isRunning)
         .opacity(isRunning ? 0.35 : 1)
         .accessibilityLabel("Annulla e ripristina il cursore")
+    }
+
+    private func armOrConfirm() {
+        if settings.requireConfirmation {
+            showingConfirmation = true
+        } else {
+            onArmed()
+        }
     }
 
     private func resetSlider() {

@@ -4,8 +4,7 @@ import SwiftUI
 struct RespringSlideApp: App {
     var body: some Scene {
         WindowGroup {
-            RootPowerView()
-                .preferredColorScheme(.dark)
+            MainTabView()
         }
     }
 }

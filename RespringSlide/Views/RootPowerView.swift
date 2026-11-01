@@ -1,14 +1,14 @@
 import SwiftUI
 
-/// Hosts the two skins and the shared respring engine, and overlays the
-/// theme picker (top-right). The picker itself matches the active skin:
-/// a native Liquid Glass "…" in Liquid Glass mode, and the OldSafari iOS 6
-/// sheet-metal "…" with a history-style dropdown in OldOS mode.
+/// The "Respring" section. Hosts the two skins and the shared respring engine,
+/// and overlays the theme picker (top-right). The picker itself matches the
+/// active skin: a native Liquid Glass "…" in Liquid Glass mode, and the
+/// OldSafari iOS 6 sheet-metal "…" with a history-style dropdown in OldOS mode.
 ///
 /// The engine (`RespringPayloadView`) lives here so both skins trigger the
-/// identical behaviour: slide → confirm → run.
+/// identical behaviour: slide → (optional confirm) → run.
 struct RootPowerView: View {
-    @StateObject private var themeStore = AppThemeStore()
+    @EnvironmentObject private var settings: AppSettings
 
     @State private var isRunning = false
     @State private var engineEnabled = false
@@ -20,7 +20,7 @@ struct RootPowerView: View {
 
             // Active skin.
             Group {
-                switch themeStore.theme {
+                switch settings.skin {
                 case .liquidGlass:
                     LiquidGlassPowerOffView(isRunning: isRunning, onArmed: arm)
                 case .oldOS:
@@ -43,7 +43,7 @@ struct RootPowerView: View {
             // OldOS dropdown, styled like the OldSafari history panel.
             if showingOldOSMenu {
                 OldOSThemeMenuPanel(
-                    current: themeStore.theme,
+                    current: settings.skin,
                     onSelect: { select($0) },
                     onDismiss: { withAnimation(.easeOut(duration: 0.15)) { showingOldOSMenu = false } }
                 )
@@ -51,9 +51,7 @@ struct RootPowerView: View {
                 .zIndex(10)
             }
         }
-        .statusBarHidden(true)
-        .preferredColorScheme(.dark)
-        .animation(.easeInOut(duration: 0.28), value: themeStore.theme)
+        .animation(.easeInOut(duration: 0.28), value: settings.skin)
     }
 
     @ViewBuilder
@@ -62,7 +60,7 @@ struct RootPowerView: View {
             HStack {
                 Spacer()
                 Group {
-                    switch themeStore.theme {
+                    switch settings.skin {
                     case .liquidGlass:
                         liquidGlassPicker
                     case .oldOS:
@@ -83,7 +81,7 @@ struct RootPowerView: View {
     /// Native Liquid Glass "…" — the identical material as the X button.
     private var liquidGlassPicker: some View {
         Menu {
-            Picker("Aspetto", selection: pickerBinding) {
+            Picker("Aspetto", selection: skinBinding) {
                 ForEach(AppTheme.allCases) { theme in
                     Label(theme.title, systemImage: theme.symbol)
                         .tag(theme)
@@ -101,15 +99,15 @@ struct RootPowerView: View {
         .accessibilityLabel("Scegli l'aspetto")
     }
 
-    private var pickerBinding: Binding<AppTheme> {
+    private var skinBinding: Binding<AppTheme> {
         Binding(
-            get: { themeStore.theme },
+            get: { settings.skin },
             set: { select($0) }
         )
     }
 
     private func select(_ newTheme: AppTheme) {
-        themeStore.select(newTheme)
+        settings.skin = newTheme
         withAnimation(.easeOut(duration: 0.15)) { showingOldOSMenu = false }
     }
 
@@ -123,4 +121,5 @@ struct RootPowerView: View {
 
 #Preview {
     RootPowerView()
+        .environmentObject(AppSettings())
 }

@@ -7,6 +7,13 @@ A minimal iOS respring experiment with a full-screen, power-off-style slider and
 
 The `…` picker uses the identical native Liquid Glass material as the cancel (X) button, and the chosen skin is remembered across launches. Both skins drive the **same** behaviour (slide → confirm → run) and the **same** unchanged respring engine.
 
+### Sections
+
+The app has two sections behind a **native Liquid Glass bottom tab bar** (iOS 26+), in the style of the iOS Files app:
+
+- **Respring** — the slide-to-power-off screen above.
+- **Impostazioni** — settings: **Aspetto** (Sistema / Chiaro / Scuro), interface skin (Liquid Glass / OldOS), confirmation toggle, haptics toggle, slide threshold, reset, and app info. All settings persist and apply live.
+
 
 
 - **UI:** Italian, black full-screen layout, Dynamic-Island-safe Liquid Glass respring capsule, screenshot-proportioned draggable power control, and bottom cancel/reset button. Dimensions scale from the supplied 709 × 1536 px reference (slider 591 × 168 px; thumb 144 × 144 px; cancel 144 × 144 px).
