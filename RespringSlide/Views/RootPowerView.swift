@@ -85,7 +85,7 @@ struct RootPowerView: View {
         Menu {
             Picker("Aspetto", selection: pickerBinding) {
                 ForEach(AppTheme.allCases) { theme in
-                    Label("\(theme.title) — \(theme.subtitle)", systemImage: theme.symbol)
+                    Label(theme.title, systemImage: theme.symbol)
                         .tag(theme)
                 }
             }

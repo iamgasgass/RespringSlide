@@ -15,9 +15,7 @@ struct OldOSPowerOffView: View {
     @StateObject private var safeArea = OldOSSafeArea()
 
     @State private var sliderOffset: CGFloat = 0
-    @State private var isDragging = false
-    @State private var showingConfirmation = false
-    @State private var shimmerPhase: CGFloat = -1
+    @State private var showingAlert = false
 
     var body: some View {
         GeometryReader { geometry in
@@ -51,17 +49,25 @@ struct OldOSPowerOffView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .confirmationDialog(
-                "Avviare il respring?",
-                isPresented: $showingConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button("Avvia respring", role: .destructive) { onArmed() }
-                Button("Annulla", role: .cancel) { resetSlider() }
-            } message: {
-                Text("La tecnica può bloccare WebKit o riavviare SpringBoard, ma non è garantita su ogni versione di iOS. Salva prima il tuo lavoro.")
+            .overlay {
+                if showingAlert {
+                    OldOSAlertView(
+                        title: "Avviare il respring?",
+                        message: "La tecnica può bloccare WebKit o riavviare SpringBoard, ma non è garantita su ogni versione di iOS. Salva prima il tuo lavoro.",
+                        cancelTitle: "Annulla",
+                        confirmTitle: "Avvia respring",
+                        onCancel: {
+                            showingAlert = false
+                            resetSlider()
+                        },
+                        onConfirm: {
+                            showingAlert = false
+                            onArmed()
+                        }
+                    )
+                    .transition(.opacity)
+                }
             }
-            .onAppear(perform: startShimmer)
         }
         .preferredColorScheme(.dark)
     }
@@ -121,9 +127,20 @@ struct OldOSPowerOffView: View {
 
             // Single "scorri per spegnere" label, centred in the track, with a
             // continuous iOS 6 shine sweep.
-            shimmerLabel
-                .frame(width: width, height: height)
-                .allowsHitTesting(false)
+            Group {
+                if isRunning {
+                    Text("Respring in corso")
+                        .font(OldOSFont.bold(23))
+                        .foregroundColor(.white.opacity(0.85))
+                        .lineLimit(1)
+                        .shadow(color: .black.opacity(0.6), radius: 0, x: 0, y: -1)
+                } else {
+                    ShineText(text: "Scorri per spegnere", font: OldOSFont.bold(23), baseOpacity: 0.30)
+                        .shadow(color: .black.opacity(0.6), radius: 0, x: 0, y: -1)
+                }
+            }
+            .frame(width: width, height: height)
+            .allowsHitTesting(false)
 
             // White glossy knob with the red power glyph.
             iOS6PowerKnob()
@@ -134,18 +151,16 @@ struct OldOSPowerOffView: View {
                     DragGesture(minimumDistance: 0)
                         .onChanged { value in
                             guard !isRunning else { return }
-                            isDragging = true
                             sliderOffset = min(max(value.translation.width, 0), travel)
                         }
                         .onEnded { _ in
                             guard !isRunning else { return }
-                            isDragging = false
                             if travel > 0 && sliderOffset >= travel * 0.84 {
                                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                                 withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
                                     sliderOffset = travel
                                 }
-                                showingConfirmation = true
+                                withAnimation(.easeIn(duration: 0.15)) { showingAlert = true }
                             } else {
                                 withAnimation(.spring(response: 0.42, dampingFraction: 0.76)) {
                                     sliderOffset = 0
@@ -157,38 +172,6 @@ struct OldOSPowerOffView: View {
                 .accessibilityHint("Trascina fino all'estremità destra per avviare il respring")
         }
         .frame(width: width, height: height)
-    }
-
-    private var shimmerLabel: some View {
-        let text = isRunning ? "Respring in corso" : "scorri per spegnere"
-        return Text(text)
-            .font(OldOSFont.bold(23))
-            .foregroundColor(.white.opacity(0.30))
-            .shadow(color: .black.opacity(0.6), radius: 0, x: 0, y: -1)
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-            .overlay(
-                GeometryReader { geo in
-                    LinearGradient(
-                        stops: [
-                            .init(color: .clear, location: 0.0),
-                            .init(color: .white.opacity(0.95), location: 0.5),
-                            .init(color: .clear, location: 1.0)
-                        ],
-                        startPoint: .leading, endPoint: .trailing
-                    )
-                    .frame(width: geo.size.width * 0.5)
-                    .offset(x: shimmerPhase * geo.size.width)
-                    .mask(
-                        Text(text)
-                            .font(OldOSFont.bold(23))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                            .frame(width: geo.size.width, height: geo.size.height)
-                    )
-                    .opacity(isRunning ? 0 : 1)
-                }
-            )
     }
 
     // MARK: - Cancel
@@ -217,16 +200,8 @@ struct OldOSPowerOffView: View {
 
     private func resetSlider() {
         guard !isRunning else { return }
-        isDragging = false
         withAnimation(.spring(response: 0.42, dampingFraction: 0.76)) {
             sliderOffset = 0
-        }
-    }
-
-    private func startShimmer() {
-        shimmerPhase = -0.6
-        withAnimation(.linear(duration: 2.1).repeatForever(autoreverses: false)) {
-            shimmerPhase = 1.1
         }
     }
 }
