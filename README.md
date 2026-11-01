@@ -1,20 +1,30 @@
 # RespringSlide
 
-A minimal iOS respring experiment with a full-screen, power-off-style slider and native SwiftUI Liquid Glass styling.
+A minimal iOS respring experiment with a full-screen, power-off-style slider and two selectable visual modes.
 
-- **UI:** Italian, black full-screen layout, Dynamic-Island-safe Liquid Glass respring capsule, screenshot-proportioned draggable power control, and bottom cancel/reset button. Dimensions scale from the supplied 709 × 1536 px reference (slider 591 × 168 px; thumb 144 × 144 px; cancel 144 × 144 px).
-- **Glass:** SwiftUI `glassEffect` / interactive Liquid Glass controls (iOS 26+ SDK).
-- **Engine:** local `WKWebView` document that reproduces the iframe/backdrop-filter/WebKit pressure technique associated with `jailbreak.party/respring`.
-- **Build:** XcodeGen `project.yml` + GitHub Actions `.github/workflows/build.yml`.
-- **Output:** unsigned `RespringSlide-unsigned.ipa` artifact.
+## Interface modes
 
-## Important limitations
+Use the top-right `…` menu to switch between the two interfaces. The selection is persisted with `AppStorage`.
 
-This is an experimental WebKit-triggered respring attempt, **not an Apple-supported API**. iOS does not expose a public API that lets an ordinary App Store app restart SpringBoard. Depending on the precise iOS build, device, WebKit process policy, and memory pressure, this technique may only terminate the WebContent process or app, may do nothing, or may cause SpringBoard to restart. It is not guaranteed on iOS 27.0.1 or other releases.
+- **Liquid Glass — app attuale:** the slider track, its thumb, the upper respring capsule, the cancel button, and the `…` selector use the same native interactive SwiftUI Liquid Glass treatment (`.glassEffect(.regular.interactive())`). The main controls are hosted in a `GlassEffectContainer` so the system can render their material together. The moving highlight on “Scorri per spegnere” follows the slider thumb.
+- **OldOS — iOS 6:** a dark skeuomorphic recreation of the iOS 6-style power slider, with a graphite shell, beveled silver arrow thumb, and the original OldOS-style animated grey-to-white text sheen. Its dark palette reuses the blue-grey chrome tones shown in the supplied OldOS/Safari source. The interface remains full-screen on current iPhone layouts and keeps the modern top-right mode selector.
 
-The embedded loop is only started after the user completes the slider and explicitly confirms. A 15-second watchdog stops the loop if SpringBoard has not restarted. Save open documents and data before testing. Do not use this as a substitute for a normal restart or a recovery method.
+The Liquid Glass mode uses Apple's public SwiftUI `glassEffect` API. The actual refraction, highlights, and touch response are system-rendered; the app does not draw a static imitation over the glass.
 
-The IPA produced by this workflow is **unsigned**. It cannot be installed directly on a stock iPhone until signed with a valid certificate or an appropriate sideloading workflow. This repository does not contain certificates, provisioning profiles, or signing secrets.
+## App identity
+
+- **Display name:** `RespringSlide`
+- **Bundle identifier:** `com.iamgasgass.respringslide`
+- **Version:** `1.0`
+- **Build:** `1`
+
+## Respring engine and limitations
+
+The local `WKWebView` document reproduces the iframe / `backdrop-filter` / WebKit pressure technique associated with `jailbreak.party/respring` and the publicly attributed WebKit research implementation.
+
+This is an experimental WebKit-triggered respring attempt, **not an Apple-supported API**. iOS does not expose a public API that lets an ordinary app restart SpringBoard. Depending on the exact iOS build, device, WebKit process policy, and memory pressure, this technique may only terminate the WebContent process or app, may do nothing, or may cause SpringBoard to restart. It is not guaranteed on iOS 27.0.1 or any other release. The embedded loop starts only after the user completes the slider and explicitly confirms. Save open documents and data before testing.
+
+The IPA produced by GitHub Actions is **unsigned**. It cannot be installed directly on a stock iPhone until signed with a valid certificate or an appropriate sideloading workflow. This repository contains no certificates, provisioning profiles, or signing secrets.
 
 ## Build locally
 
@@ -46,20 +56,9 @@ cp -R build/Build/Products/Release-iphoneos/RespringSlide.app staging/Payload/
 
 ## Build on GitHub Actions
 
-1. Create an empty repository on GitHub and upload/push this folder.
-2. Push to `main`, create a pull request, or run **Actions → Build unsigned IPA → Run workflow**.
-3. Open the completed workflow run and download the `RespringSlide-unsigned-ipa` artifact.
-4. Push a tag such as `v1.0.0` to attach the IPA to a GitHub Release automatically.
-
-Example first push:
-
-```sh
-git init -b main
-git add .
-git commit -m "Initial RespringSlide project"
-git remote add origin https://github.com/USERNAME/RespringSlide.git
-git push -u origin main
-```
+1. Push the repository to `main`, create a pull request, or run **Actions → Build unsigned IPA → Run workflow**.
+2. Download the `RespringSlide-unsigned-ipa` artifact from the completed workflow.
+3. Push a tag such as `v1.0.0` to attach the IPA to a GitHub Release automatically.
 
 ## Project structure
 
@@ -69,15 +68,16 @@ git push -u origin main
 ├── RespringSlide/
 │   ├── Assets.xcassets/AppIcon.appiconset/
 │   ├── Respring/RespringPayloadView.swift
-│   ├── Views/PowerOffView.swift
-│   └── RespringSlideApp.swift
+│   ├── RespringSlideApp.swift
+│   └── Views/PowerOffView.swift
 └── project.yml
 ```
 
-## Credits and references
+## References and attribution
 
-- Original landing page: <https://jailbreak.party/respring> (the site is now closed).
-- Public Swift implementation documenting the WebKit technique and attribution to neonmodder123: <https://github.com/rooootdev/mond/blob/main/mond/helpers/utils.swift>.
-- Apple's documentation for the SwiftUI Liquid Glass API: <https://developer.apple.com/documentation/swiftui/view/glasseffect(_:in:)>.
+- Apple, [Applying Liquid Glass to custom views](https://developer.apple.com/documentation/swiftui/applying-liquid-glass-to-custom-views).
+- Original respring technique reference: <https://jailbreak.party/respring>.
+- Public Swift implementation documenting the WebKit technique: <https://github.com/rooootdev/mond/blob/main/mond/helpers/utils.swift>.
+- **OldOS visual reference:** Zane Kleinberg (`@zzanehip`), [The OldOS Project](https://github.com/zzanehip/The-OldOS-Project), especially `OldOS/OldOS/LockScreen.swift` (the metallic iOS 6-era slide control and animated “slide to unlock” sheen) and `OldOS/OldOS/Safari.swift` (blue-grey chrome palette). The upstream README states Creative Commons Attribution 4.0; see <https://creativecommons.org/licenses/by/4.0/>. RespringSlide contains an independent SwiftUI adaptation of these visual details, not the OldOS source files or its bundled assets.
 
-The UI is a SwiftUI recreation based on the supplied screenshot, not copied Apple source code. The control dimensions are proportionally scaled from that image, and the top capsule is intentionally placed in the safe area below the Dynamic Island. The project scaffold here is original. The experimental WebKit strategy is attributed to its upstream research; this repository does not claim that technique as original work.
+The app UI is a SwiftUI recreation and is not Apple's original SpringBoard source code. The OldOS mode is an adaptation of the design language and slider treatment in the cited project, not a claim that it is Apple's original iOS 6 source.
