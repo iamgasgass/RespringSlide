@@ -119,10 +119,10 @@ struct OldOSPowerOffView: View {
                     .allowsHitTesting(false)
             )
 
-            // Shimmering "scorri per spegnere" label (continuous iOS 6 sweep).
+            // Single "scorri per spegnere" label, centred in the track, with a
+            // continuous iOS 6 shine sweep.
             shimmerLabel
-                .frame(width: width - knobSize - 16, height: height)
-                .position(x: (width + knobSize) / 2 - 8, y: height / 2)
+                .frame(width: width, height: height)
                 .allowsHitTesting(false)
 
             // White glossy knob with the red power glyph.

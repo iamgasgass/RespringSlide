@@ -1,13 +1,13 @@
 import SwiftUI
 
-/// A close SwiftUI recreation of the supplied iOS power-off screen reference.
-/// Measurements are scaled from the 709 × 1536 px reference image to the
-/// device's logical width. The top capsule stays below the Dynamic Island.
+/// The "Liquid Glass" skin: the iOS 27-style slide-to-power-off control drawn
+/// entirely with the native SwiftUI `glassEffect(.regular…)` material — the
+/// identical material used by the X button — so the track, the bubble and the
+/// thumb are literally Liquid Glass.
 ///
-/// This is the "Liquid Glass" skin. The slider, the top capsule ("the whole
-/// bubble") and the cancel button all use the identical native
-/// `glassEffect(.regular…)` material, so the slider and bubble match the X
-/// button exactly. Engine state is owned by the parent so both skins share it.
+/// There is a single label, "scorri per spegnere", centred in the track with a
+/// continuous specular shine. No cancel X is shown in this mode. Engine state
+/// is owned by the parent so both skins share it.
 struct LiquidGlassPowerOffView: View {
     /// Driven by the parent, true while the respring engine runs.
     let isRunning: Bool
@@ -16,7 +16,7 @@ struct LiquidGlassPowerOffView: View {
 
     @State private var sliderOffset: CGFloat = 0
     @State private var showingConfirmation = false
-    @State private var isDragging = false
+    @State private var shimmerPhase: CGFloat = -0.6
 
     private let referenceWidth: CGFloat = 709
     private let labelFont = Font.system(size: 22, weight: .regular, design: .default)
@@ -26,7 +26,6 @@ struct LiquidGlassPowerOffView: View {
             let screenWidth = geometry.size.width
             let scale = screenWidth / 393
 
-            // Keep the established reference dimensions and positioning.
             let topCapsuleWidth = screenWidth * (324 / 1179)
             let topCapsuleHeight = screenWidth * (114 / 1179)
             let sliderWidth = screenWidth * (591 / referenceWidth)
@@ -71,6 +70,7 @@ struct LiquidGlassPowerOffView: View {
             } message: {
                 Text("La tecnica può bloccare WebKit o riavviare SpringBoard, ma non è garantita su ogni versione di iOS. Salva prima il tuo lavoro.")
             }
+            .onAppear(perform: startShimmer)
         }
         .preferredColorScheme(.dark)
     }
@@ -91,8 +91,6 @@ struct LiquidGlassPowerOffView: View {
             let knobInset = proxy.size.height * (24 / 168)
             let knobSize = proxy.size.height - knobInset
             let travel = max(0, proxy.size.width - knobSize - knobInset)
-            let labelWidth = max(0, proxy.size.width - knobSize - 12)
-            let sliderProgress = travel > 0 ? min(max(sliderOffset / travel, 0), 1) : 0
 
             ZStack(alignment: .leading) {
                 // Native Liquid Glass supplies the blur, reflections, edge
@@ -101,23 +99,10 @@ struct LiquidGlassPowerOffView: View {
                     .glassEffect(.regular, in: Capsule())
                     .accessibilityHidden(true)
 
-                Group {
-                    if isRunning {
-                        Text("Respring in corso")
-                            .foregroundStyle(.white.opacity(0.86))
-                    } else {
-                        animatedPowerLabel(progress: sliderProgress, isActive: isDragging)
-                    }
-                }
-                .font(labelFont)
-                .minimumScaleFactor(0.78)
-                .lineLimit(1)
-                .frame(width: labelWidth, height: proxy.size.height)
-                .position(
-                    x: (proxy.size.width + knobSize - 12) / 2,
-                    y: proxy.size.height / 2
-                )
-                .allowsHitTesting(false)
+                // Single centred label with a continuous shine.
+                shimmerLabel
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .allowsHitTesting(false)
 
                 ZStack {
                     Image(systemName: "power")
@@ -134,12 +119,10 @@ struct LiquidGlassPowerOffView: View {
                     DragGesture(minimumDistance: 0)
                         .onChanged { value in
                             guard !isRunning else { return }
-                            isDragging = true
                             sliderOffset = min(max(value.translation.width, 0), travel)
                         }
                         .onEnded { _ in
                             guard !isRunning else { return }
-                            isDragging = false
                             if travel > 0 && sliderOffset >= travel * 0.84 {
                                 withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
                                     sliderOffset = travel
@@ -152,53 +135,64 @@ struct LiquidGlassPowerOffView: View {
                             }
                         }
                 )
-                .accessibilityLabel("Scorri per avviare il respring")
+                .accessibilityLabel("Scorri per spegnere")
                 .accessibilityHint("Trascina il pulsante circolare fino all'estremità destra")
             }
         }
     }
 
-    /// The moving specular highlight follows the thumb while the user drags,
-    /// matching the illumination sweep in the iOS shutdown interaction.
-    private func animatedPowerLabel(progress: CGFloat, isActive: Bool) -> some View {
-        Text("Scorri per spegnere")
+    /// The single "scorri per spegnere" label, centred in the track, with a
+    /// specular highlight that continuously sweeps left → right.
+    private var shimmerLabel: some View {
+        let text = isRunning ? "Respring in corso" : "Scorri per spegnere"
+        return Text(text)
             .font(labelFont)
             .foregroundStyle(.white.opacity(0.38))
-            .blur(radius: 0.55)
+            .lineLimit(1)
+            .minimumScaleFactor(0.78)
+            .frame(maxWidth: .infinity)
+            .multilineTextAlignment(.center)
             .overlay {
                 GeometryReader { geometry in
                     LinearGradient(
                         stops: [
                             .init(color: .clear, location: 0.0),
                             .init(color: .white.opacity(0.16), location: 0.30),
-                            .init(color: .white.opacity(0.82), location: 0.50),
+                            .init(color: .white.opacity(0.95), location: 0.50),
                             .init(color: .white.opacity(0.16), location: 0.70),
                             .init(color: .clear, location: 1.0)
                         ],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
-                    .frame(width: geometry.size.width * 0.58)
-                    .offset(x: (progress - 0.29) * geometry.size.width)
-                    .blur(radius: 2.2)
+                    .frame(width: geometry.size.width * 0.5)
+                    .offset(x: shimmerPhase * geometry.size.width)
+                    .blur(radius: 1.2)
                     .mask {
-                        Text("Scorri per spegnere")
+                        Text(text)
                             .font(labelFont)
                             .lineLimit(1)
                             .minimumScaleFactor(0.78)
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                            .multilineTextAlignment(.center)
                     }
-                    .opacity(isActive ? 1 : 0)
-                    .animation(.easeOut(duration: 0.16), value: isActive)
+                    .opacity(isRunning ? 0 : 1)
                 }
             }
-            .accessibilityLabel("Scorri per spegnere")
+            .accessibilityLabel(text)
     }
 
     private func resetSlider() {
         guard !isRunning else { return }
-        isDragging = false
         withAnimation(.spring(response: 0.42, dampingFraction: 0.76)) {
             sliderOffset = 0
+        }
+    }
+
+    private func startShimmer() {
+        shimmerPhase = -0.6
+        withAnimation(.linear(duration: 2.1).repeatForever(autoreverses: false)) {
+            shimmerPhase = 1.1
         }
     }
 }
