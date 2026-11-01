@@ -104,7 +104,7 @@ struct LiquidGlassPowerOffView: View {
                         .foregroundStyle(.white.opacity(0.86))
                         .lineLimit(1)
                 } else {
-                    ShineText(text: "Scorri per spegnere", font: labelFont, baseOpacity: 0.38)
+                    ShineText(text: "Scorri per respring", font: labelFont, baseOpacity: 0.38)
                 }
             }
             .frame(width: width, height: height)
@@ -140,7 +140,7 @@ struct LiquidGlassPowerOffView: View {
                         }
                     }
             )
-            .accessibilityLabel("Scorri per spegnere")
+            .accessibilityLabel("Scorri per respring")
             .accessibilityHint("Trascina il pulsante circolare fino all'estremità destra")
         }
         .frame(width: width, height: height)

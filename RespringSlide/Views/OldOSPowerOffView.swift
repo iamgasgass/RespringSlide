@@ -1,11 +1,12 @@
 import SwiftUI
 import UIKit
 
-/// The "OldOS" skin: a faithful recreation of the iOS 6 "slide to power off"
-/// screen, drawn with the OldSafari / OldOS appearance kit (`OldOSKit` +
-/// `OldSafariPalette`) so the palette, glossy sheet-metal controls and 2012
-/// typography match the OldSafari project. Behaviour (slide → optional confirm
-/// → respring) is shared with the Liquid Glass skin.
+/// The "OldOS" skin. The slider is ported code-for-code from OldOS'
+/// `lock_footer` (OldOS/LockScreen.swift) — the same dark rounded track with
+/// its `[83…143]` gradient border, the same metallic knob with the `⮕` glyph,
+/// and the same `gradientForeground` shine on the label (here reading
+/// "Scorri per respring"). The knob carries the same gradient border as the
+/// track so the bubble matches the slider.
 struct OldOSPowerOffView: View {
     let isRunning: Bool
     let onArmed: () -> Void
@@ -19,10 +20,9 @@ struct OldOSPowerOffView: View {
         GeometryReader { geometry in
             let w = geometry.size.width
             let trackWidth = min(w - 44, 560)
-            let trackHeight: CGFloat = 74
+            let trackHeight: CGFloat = 86
 
             ZStack {
-                // iOS 6 power-off backdrop: near-black with a faint top vignette.
                 Color.black.ignoresSafeArea()
                 RadialGradient(
                     colors: [Color.oldOS(42, 44, 48).opacity(0.55), .clear],
@@ -84,61 +84,52 @@ struct OldOSPowerOffView: View {
         .background(iOS6GlossCapsule(type: .black))
     }
 
-    // MARK: - Slide to power off
+    // MARK: - Slide to power off (ported from OldOS `lock_footer`)
+
+    /// The OldOS track border/knob gradient, `[83…143]`, shared by both so the
+    /// bubble matches the slider.
+    private var oldOSBorderGradient: LinearGradient {
+        LinearGradient(oldOS: [
+            OldOSStop(.oldOS(83, 83, 83), 0),
+            OldOSStop(.oldOS(143, 143, 143), 1)
+        ])
+    }
 
     private func slideToPowerOff(width: CGFloat, height: CGFloat) -> some View {
-        let knobInset: CGFloat = 4
-        let knobSize = height - knobInset * 2
-        let travel = max(0, width - knobSize - knobInset * 2)
+        let knobWidth: CGFloat = 75
+        let inset: CGFloat = 6
+        let travel = max(0, width - knobWidth - inset * 2)
 
         return ZStack(alignment: .leading) {
-            // Recessed glossy translucent track (iOS 6 "slot").
-            OldOSInnerShadow(
-                shape: Capsule(),
-                fill: LinearGradient(oldOS: [
-                    OldOSStop(.oldOS(20, 20, 22, 0.92), 0),
-                    OldOSStop(.oldOS(8, 8, 10, 0.92), 0.5),
-                    OldOSStop(.oldOS(4, 4, 6, 0.94), 0.5),
-                    OldOSStop(.oldOS(14, 14, 16, 0.94), 1)
-                ]),
-                radius: 2.2,
-                offset: CGPoint(x: 0, y: 1.5),
-                intensity: 0.85
-            )
-            .overlay(
-                Capsule()
-                    .stroke(Color.white.opacity(0.14), lineWidth: 0.75)
-                    .padding(0.5)
-            )
-            .overlay(
-                Capsule()
-                    .fill(LinearGradient(
-                        colors: [Color.white.opacity(0.10), .clear],
-                        startPoint: .top, endPoint: .center))
-                    .padding(1.5)
-                    .allowsHitTesting(false)
-            )
+            // OldOS track: dark rounded rectangle with the [83…143] stroke.
+            RoundedRectangle(cornerRadius: 12)
+                .fill(LinearGradient(oldOS: [
+                    OldOSStop(.oldOS(3, 3, 3), 0),
+                    OldOSStop(.oldOS(21, 21, 21), 0.5),
+                    OldOSStop(.oldOS(32, 32, 32), 1)
+                ]))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(oldOSBorderGradient, lineWidth: 0.5)
+                )
 
-            // Single "scorri per spegnere" label, centred, continuous iOS 6 shine.
+            // OldOS shine label, reading "Scorri per respring".
             Group {
                 if isRunning {
                     Text("Respring in corso")
-                        .font(OldOSFont.bold(23))
+                        .font(.custom("Helvetica Neue", fixedSize: 25))
                         .foregroundColor(.white.opacity(0.85))
                         .lineLimit(1)
-                        .shadow(color: .black.opacity(0.6), radius: 0, x: 0, y: -1)
                 } else {
-                    ShineText(text: "Scorri per spegnere", font: OldOSFont.bold(23), baseOpacity: 0.30)
-                        .shadow(color: .black.opacity(0.6), radius: 0, x: 0, y: -1)
+                    OldOSSlideShineLabel(text: "Scorri per respring")
                 }
             }
             .frame(width: width, height: height)
             .allowsHitTesting(false)
 
-            // White glossy knob with the red power glyph.
-            iOS6PowerKnob()
-                .frame(width: knobSize, height: knobSize)
-                .padding(knobInset)
+            // OldOS metallic knob (bubble) with the ⮕ glyph, same border.
+            oldOSKnob(width: knobWidth, height: height - inset * 2)
+                .padding(inset)
                 .offset(x: sliderOffset)
                 .gesture(
                     DragGesture(minimumDistance: 0)
@@ -161,10 +152,46 @@ struct OldOSPowerOffView: View {
                             }
                         }
                 )
-                .accessibilityLabel("Scorri per spegnere")
+                .accessibilityLabel("Scorri per respring")
                 .accessibilityHint("Trascina fino all'estremità destra per avviare il respring")
         }
         .frame(width: width, height: height)
+    }
+
+    /// OldOS `lock_footer` knob, ported: metallic base + top gloss half + ⮕
+    /// glyph, with the shared [83…143] border so the bubble matches the slider.
+    private func oldOSKnob(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            ZStack(alignment: .topLeading) {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(LinearGradient(oldOS: [
+                        OldOSStop(.oldOS(208, 208, 208), 0),
+                        OldOSStop(.oldOS(168, 168, 168), 1)
+                    ]))
+                GeometryReader { geo in
+                    Rectangle()
+                        .fill(LinearGradient(oldOS: [
+                            OldOSStop(.oldOS(243, 243, 243), 0),
+                            OldOSStop(.oldOS(225, 225, 225), 1)
+                        ]))
+                        .frame(width: width, height: geo.size.height / 2, alignment: .top)
+                        .clipped()
+                }
+            }
+            Text("⮕")
+                .font(.custom("Helvetica Neue", fixedSize: 39))
+                .foregroundStyle(LinearGradient(oldOS: [
+                    OldOSStop(.oldOS(166, 166, 166), 0.5),
+                    OldOSStop(.oldOS(134, 134, 134), 0.5)
+                ]))
+                .shadow(color: .white.opacity(0.4), radius: 0, x: 0, y: 0.75)
+        }
+        .frame(width: width, height: height)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(oldOSBorderGradient, lineWidth: 0.5)
+        )
     }
 
     // MARK: - Cancel
@@ -204,6 +231,42 @@ struct OldOSPowerOffView: View {
         withAnimation(.spring(response: 0.42, dampingFraction: 0.76)) {
             sliderOffset = 0
         }
+    }
+}
+
+// MARK: - OldOS shine label (ported from `gradientForeground` + its animation)
+
+/// Port of OldOS' slide label: Helvetica Neue 25 with the three-stop gradient
+/// mask sweeping across via animated start/end points.
+private struct OldOSSlideShineLabel: View {
+    let text: String
+
+    @State private var startPoint = UnitPoint(x: -2, y: 0)
+    @State private var endPoint = UnitPoint(x: 1, y: 0)
+
+    var body: some View {
+        Text(text)
+            .font(.custom("Helvetica Neue", fixedSize: 25))
+            .overlay(
+                LinearGradient(
+                    gradient: Gradient(stops: [
+                        .init(color: .oldOS(78, 78, 78), location: 0.33),
+                        .init(color: .white, location: 0.475),
+                        .init(color: .oldOS(78, 78, 78), location: 0.525)
+                    ]),
+                    startPoint: startPoint,
+                    endPoint: endPoint
+                )
+            )
+            .mask(
+                Text(text).font(.custom("Helvetica Neue", fixedSize: 25))
+            )
+            .onAppear {
+                withAnimation(.easeInOut(duration: 3.6).repeatForever(autoreverses: false)) {
+                    endPoint = UnitPoint(x: 2, y: 0)
+                    startPoint = UnitPoint(x: 1, y: 0)
+                }
+            }
     }
 }
 
@@ -251,38 +314,5 @@ private struct iOS6GlossCapsule: View {
             .overlay(Capsule().strokeBorder(Color.black.opacity(0.6), lineWidth: 1))
             .overlay(Capsule().strokeBorder(Color.white.opacity(0.16), lineWidth: 0.75).padding(1))
             .shadow(color: .black.opacity(0.45), radius: 1, x: 0, y: 1)
-    }
-}
-
-/// The white glossy knob carrying the red power glyph, as on the iOS 6 slider.
-private struct iOS6PowerKnob: View {
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 9)
-                .fill(LinearGradient(oldOS: [
-                    OldOSStop(.oldOS(255, 255, 255), 0),
-                    OldOSStop(.oldOS(244, 245, 247), 0.5),
-                    OldOSStop(.oldOS(226, 228, 232), 0.5),
-                    OldOSStop(.oldOS(236, 238, 242), 1)
-                ]))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 9)
-                        .fill(LinearGradient(
-                            colors: [Color.white.opacity(0.9), .clear],
-                            startPoint: .top, endPoint: .center))
-                        .padding(1)
-                )
-                .overlay(RoundedRectangle(cornerRadius: 9)
-                    .strokeBorder(Color.oldOS(120, 122, 128), lineWidth: 0.75))
-                .shadow(color: .black.opacity(0.55), radius: 1.5, x: 0, y: 1)
-
-            Image(systemName: "power")
-                .font(.system(size: 26, weight: .semibold))
-                .foregroundStyle(LinearGradient(oldOS: [
-                    OldOSStop(.oldOS(214, 58, 48), 0),
-                    OldOSStop(.oldOS(168, 26, 22), 1)
-                ]))
-                .shadow(color: .white.opacity(0.7), radius: 0, x: 0, y: 0.75)
-        }
     }
 }
