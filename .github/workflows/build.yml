@@ -1,0 +1,64 @@
+name: Build unsigned IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Respring unsigned IPA
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build (no Apple signature)
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project Respring.xcodeproj \
+            -scheme Respring \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="" \
+            build \
+            | tail -n 60
+
+      - name: Package unsigned IPA
+        run: |
+          set -euo pipefail
+          APP="$(find build/Build/Products -type d -name 'Respring.app' -print -quit)"
+          test -n "$APP"
+          test -d "$APP"
+          echo "App bundle: $APP"
+          rm -rf Payload
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          zip -qry Respring-unsigned.ipa Payload
+          ls -lh Respring-unsigned.ipa
+          shasum -a 256 Respring-unsigned.ipa
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Respring-unsigned
+          path: Respring-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14
