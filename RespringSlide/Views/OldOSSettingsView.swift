@@ -29,7 +29,7 @@ struct OldOSSettingsView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                titleBar(topInset: topInset)
+                OldOSTitleBar(title: "Impostazioni", theme: theme, topInset: topInset)
 
                 ScrollView {
                     VStack(spacing: 0) {
@@ -45,23 +45,6 @@ struct OldOSSettingsView: View {
             }
             .ignoresSafeArea(edges: .top)
         }
-    }
-
-    // MARK: Full-screen title bar (extends under the status bar)
-
-    private func titleBar(topInset: CGFloat) -> some View {
-        ZStack(alignment: .bottom) {
-            LinearGradient(oldOS: theme.barGradient)
-                .oldOSBorder(width: 1, edges: [.bottom], color: theme.barHairline)
-                .oldOSInnerShadowBottom(color: theme.barHighlight, radius: 0.025)
-
-            Text("Impostazioni")
-                .font(OldOSFont.bold(20))
-                .foregroundColor(theme.titleBarTitle)
-                .shadow(color: theme.titleBarTitleShadow, radius: 0, x: 0, y: -1)
-                .padding(.bottom, 10)
-        }
-        .frame(height: topInset + 44)
     }
 
     // MARK: Sections

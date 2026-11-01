@@ -43,8 +43,15 @@ struct LiquidGlassPowerOffView: View {
                 .ignoresSafeArea()
 
                 VStack(spacing: 0) {
+                    Text("RespringSlide")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(glyphColor)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .padding(.top, 4)
+
                     respringIndicator
-                        .padding(.top, 8)
+                        .padding(.top, 20)
 
                     slideControl(width: trackWidth, height: trackHeight)
                         .padding(.top, 26)
