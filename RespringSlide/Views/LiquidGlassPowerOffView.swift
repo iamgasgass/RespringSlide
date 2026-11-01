@@ -2,8 +2,9 @@ import SwiftUI
 
 /// The "Liquid Glass" skin: the iOS 27-style slide-to-power-off control drawn
 /// entirely with the native SwiftUI `glassEffect(…)` material. The track uses
-/// the fully transparent `.clear` variant inside a `GlassEffectContainer`, so
-/// it is genuinely see-through, like the iOS 27.0.1 power-off slider.
+/// the fully transparent `.clear` variant, so it is see-through like the
+/// iOS 27.0.1 power-off slider. The label sits above the glass (not inside it)
+/// so the glass does not refract/ghost the text onto the top and bottom edges.
 ///
 /// A light and a dark version are provided (following the app appearance): the
 /// background and glyph colours flip, while the glass adapts on its own.
@@ -95,12 +96,11 @@ struct LiquidGlassPowerOffView: View {
         let knobSize = height - knobInset * 2
         let travel = max(0, width - knobSize - knobInset * 2)
 
-        return GlassEffectContainer(spacing: 0) {
-            ZStack(alignment: .leading) {
-                // Fully transparent Liquid Glass track (iOS 27-style clear glass).
-                Capsule()
-                    .glassEffect(.clear, in: Capsule())
-                    .accessibilityHidden(true)
+        return ZStack(alignment: .leading) {
+            // Fully transparent Liquid Glass track (iOS 27-style clear glass).
+            Capsule()
+                .glassEffect(.clear, in: Capsule())
+                .accessibilityHidden(true)
 
                 // Single centred label with a continuous shine.
                 Group {
@@ -154,9 +154,8 @@ struct LiquidGlassPowerOffView: View {
                 )
                 .accessibilityLabel("Scorri per respring")
                 .accessibilityHint("Trascina il pulsante circolare fino all'estremità destra")
-            }
-            .frame(width: width, height: height)
         }
+        .frame(width: width, height: height)
     }
 
     /// The glass X cancel button, identical Liquid Glass material as the thumb.
