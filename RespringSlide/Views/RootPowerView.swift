@@ -9,6 +9,7 @@ import SwiftUI
 /// identical behaviour: slide → (optional confirm) → run.
 struct RootPowerView: View {
     @EnvironmentObject private var settings: AppSettings
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var isRunning = false
     @State private var engineEnabled = false
@@ -16,7 +17,7 @@ struct RootPowerView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Color(.systemBackground).ignoresSafeArea()
 
             // Active skin.
             Group {
@@ -90,7 +91,7 @@ struct RootPowerView: View {
         } label: {
             Image(systemName: "ellipsis")
                 .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.96))
+                .foregroundStyle((colorScheme == .dark ? Color.white : Color(white: 0.12)).opacity(0.96))
                 .frame(width: 48, height: 48)
                 .glassEffect(.regular.interactive(), in: Circle())
         }

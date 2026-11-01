@@ -10,6 +10,9 @@ struct ShineText: View {
     var baseOpacity: Double = 0.34
     var bandWidth: CGFloat = 0.55
     var duration: Double = 2.1
+    /// Base glyph colour (highlight is always a bright sweep of `shineColor`).
+    var textColor: Color = .white
+    var shineColor: Color = .white
 
     @State private var phase: CGFloat = -0.6
 
@@ -18,13 +21,13 @@ struct ShineText: View {
             .font(font)
             .lineLimit(1)
             .fixedSize()
-            .foregroundStyle(.white.opacity(baseOpacity))
+            .foregroundStyle(textColor.opacity(baseOpacity))
             .overlay {
                 Text(text)
                     .font(font)
                     .lineLimit(1)
                     .fixedSize()
-                    .foregroundStyle(.white)
+                    .foregroundStyle(shineColor)
                     .mask {
                         GeometryReader { geo in
                             LinearGradient(

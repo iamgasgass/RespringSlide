@@ -12,9 +12,16 @@ struct OldOSPowerOffView: View {
     let onArmed: () -> Void
 
     @EnvironmentObject private var settings: AppSettings
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var sliderOffset: CGFloat = 0
     @State private var showingAlert = false
+
+    private var isDark: Bool { colorScheme == .dark }
+    private var background: Color { isDark ? .black : Color(white: 0.92) }
+    private var vignette: Color {
+        isDark ? Color.oldOS(42, 44, 48).opacity(0.55) : Color.black.opacity(0.06)
+    }
 
     var body: some View {
         GeometryReader { geometry in
@@ -23,9 +30,9 @@ struct OldOSPowerOffView: View {
             let trackHeight: CGFloat = 86
 
             ZStack {
-                Color.black.ignoresSafeArea()
+                background.ignoresSafeArea()
                 RadialGradient(
-                    colors: [Color.oldOS(42, 44, 48).opacity(0.55), .clear],
+                    colors: [vignette, .clear],
                     center: .top, startRadius: 8, endRadius: geometry.size.height * 0.8
                 )
                 .ignoresSafeArea()
@@ -101,13 +108,22 @@ struct OldOSPowerOffView: View {
         let travel = max(0, width - knobWidth - inset * 2)
 
         return ZStack(alignment: .leading) {
-            // OldOS track: dark rounded rectangle with the [83…143] stroke.
+            // OldOS track, in the iOS 6 "slide to power off" red, with the
+            // [83…143] stroke. Only the slider is red.
             RoundedRectangle(cornerRadius: 12)
                 .fill(LinearGradient(oldOS: [
-                    OldOSStop(.oldOS(3, 3, 3), 0),
-                    OldOSStop(.oldOS(21, 21, 21), 0.5),
-                    OldOSStop(.oldOS(32, 32, 32), 1)
+                    OldOSStop(.oldOS(239, 135, 142), 0),
+                    OldOSStop(.oldOS(199, 52, 63), 0.48),
+                    OldOSStop(.oldOS(189, 20, 33), 0.49),
+                    OldOSStop(.oldOS(189, 20, 33), 1)
                 ]))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(LinearGradient(
+                            colors: [Color.white.opacity(0.22), .clear],
+                            startPoint: .top, endPoint: .center))
+                        .padding(1)
+                )
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(oldOSBorderGradient, lineWidth: 0.5)
