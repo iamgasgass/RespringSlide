@@ -161,98 +161,172 @@ struct OldOSThemeMenuPanel: View {
     }
 }
 
-// MARK: - iOS 6 alert (OldOS UIAlertView style)
+// MARK: - OldOS skeuomorphic alert (ported code-for-code from OldOS `skeumorphic_alert`)
 
-/// A modal styled exactly like the iOS 6 `UIAlertView` as recreated in OldOS:
-/// a centred rounded "aluminium" panel with a glossy top sheen, white bold
-/// title, white message and glossy two-tone buttons, over a dimmed backdrop.
+/// A faithful port of OldOS' `skeumorphic_alert` (OldOS/Common.swift): the same
+/// navy rounded panel, aluminium 2pt stroke, `top_gloss` sheen, Helvetica Neue
+/// title/subtitle and glossy button — the only additions are a second button
+/// (styled identically to the original OK button) so the respring can be
+/// confirmed/cancelled, and the OldSafari dark-mode graphite variant, applied
+/// when dark mode is active.
 struct OldOSAlertView: View {
     let title: String
     let message: String
     let cancelTitle: String
     let confirmTitle: String
+    var isDark: Bool = true           // OldSafari dark mode, active here.
     let onCancel: () -> Void
     let onConfirm: () -> Void
 
-    var body: some View {
-        ZStack {
-            Color.black.opacity(0.55)
-                .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                VStack(spacing: 9) {
-                    Text(title)
-                        .font(OldOSFont.bold(17))
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.center)
-                        .shadow(color: .black.opacity(0.75), radius: 0, x: 0, y: -0.75)
-
-                    Text(message)
-                        .font(OldOSFont.regular(13))
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .shadow(color: .black.opacity(0.7), radius: 0, x: 0, y: -0.75)
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-                .padding(.bottom, 14)
-
-                // Button row.
-                HStack(spacing: 8) {
-                    alertButton(cancelTitle, type: .blueGray, action: onCancel)
-                    alertButton(confirmTitle, type: .blue, action: onConfirm)
-                }
-                .padding(.horizontal, 10)
-                .padding(.bottom, 12)
-            }
-            .frame(width: 276)
-            .background(
-                RoundedRectangle(cornerRadius: 13)
-                    .fill(LinearGradient(oldOS: [
-                        OldOSStop(.oldOS(120, 128, 142), 0),
-                        OldOSStop(.oldOS(92, 101, 117), 0.08),
-                        OldOSStop(.oldOS(64, 72, 88), 0.5),
-                        OldOSStop(.oldOS(52, 60, 74), 0.5),
-                        OldOSStop(.oldOS(40, 46, 58), 1)
-                    ]))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 13)
-                    .fill(LinearGradient(colors: [Color.white.opacity(0.35), .clear],
-                                         startPoint: .top, endPoint: .center))
-                    .padding(1)
-                    .allowsHitTesting(false)
-            )
-            .overlay(RoundedRectangle(cornerRadius: 13).strokeBorder(Color.black.opacity(0.6), lineWidth: 1))
-            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.white.opacity(0.18), lineWidth: 0.75).padding(1))
-            .shadow(color: .black.opacity(0.6), radius: 20, x: 0, y: 8)
-        }
+    /// OldOS navy, or the OldSafari private-browsing graphite in dark mode.
+    private var panelFill: Color {
+        isDark ? .oldOS(26, 27, 30) : .oldOS(11, 27, 68)
     }
 
-    private func alertButton(_ text: String, type: OldOSButtonType, action: @escaping () -> Void) -> some View {
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Color.black.opacity(0.55).ignoresSafeArea()
+
+                VStack {
+                    Spacer()
+                    ZStack {
+                        // Panel: fill + aluminium stroke + drop shadow (OldOS values).
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(panelFill)
+                            .opacity(0.85)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .strokeBorder(
+                                        LinearGradient(oldOS: [
+                                            OldOSStop(.oldOS(226, 227, 228), 0),
+                                            OldOSStop(.oldOS(178, 183, 194), 0.19)
+                                        ]),
+                                        lineWidth: 2
+                                    )
+                            )
+                            .shadow(color: Color.black.opacity(0.75), radius: 3, x: 0, y: 2)
+
+                        // Top gloss (OldOS `top_gloss`), clipped to the top corners.
+                        VStack {
+                            OldOSTopGloss(length: geometry.size.width - 60)
+                                .fill(LinearGradient(oldOS: [
+                                    OldOSStop(.white, 0.2),
+                                    OldOSStop(.oldOS(80, 84, 89), 1)
+                                ]))
+                                .frame(height: 45)
+                                .clipShape(OldOSRoundedCorner(radius: 12, corners: [.topLeft, .topRight]))
+                                .opacity(0.30)
+                            Spacer()
+                        }
+
+                        VStack(alignment: .center) {
+                            Text(title)
+                                .font(OldOSFont.bold(18))
+                                .foregroundColor(.white)
+                                .shadow(color: Color.black.opacity(0.80), radius: 0, x: 0, y: -1.2)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 15)
+
+                            Spacer()
+
+                            Text(message)
+                                .font(OldOSFont.regular(14.5))
+                                .foregroundColor(.white)
+                                .shadow(color: Color.black.opacity(0.80), radius: 0, x: 0, y: -1.2)
+                                .multilineTextAlignment(.center)
+                                .padding([.leading, .trailing], 10)
+                                .padding(.bottom, 5)
+
+                            Spacer()
+
+                            // Two buttons, each in the exact original OK-button style.
+                            HStack(spacing: 8) {
+                                okStyleButton(cancelTitle, action: onCancel)
+                                okStyleButton(confirmTitle, action: onConfirm)
+                            }
+                        }
+                    }
+                    .frame(maxHeight: 200)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding([.leading, .trailing], 30)
+                    Spacer()
+                }
+            }
+        }
+        .clipped()
+    }
+
+    /// Verbatim styling of OldOS' alert OK button, reused for both actions.
+    private func okStyleButton(_ text: String, action: @escaping () -> Void) -> some View {
         Button {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             action()
         } label: {
-            Text(text)
-                .font(OldOSFont.bold(16))
-                .foregroundColor(.white)
-                .shadow(color: .black.opacity(0.75), radius: 0, x: 0, y: -0.5)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .oldOSInnerShadowBackground(
-                    RoundedRectangle(cornerRadius: 8),
-                    oldOSButtonGradient(type),
-                    radius: 0.8,
-                    offset: CGPoint(x: 0, y: 0.6),
-                    intensity: 0.7
-                )
-                .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.black.opacity(0.5), lineWidth: 0.75))
-                .shadow(color: .white.opacity(0.22), radius: 0, x: 0, y: 0.8)
+            ZStack {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(LinearGradient(oldOS: [
+                        OldOSStop(.oldOS(214, 214, 214), 0),
+                        OldOSStop(.oldOS(113, 115, 119), 0.49),
+                        OldOSStop(.oldOS(74, 75, 78), 0.50),
+                        OldOSStop(.oldOS(102, 103, 106), 1)
+                    ]))
+                    .shadow(color: Color.white.opacity(0.2), radius: 0, x: 0, y: 0.5)
+                    .opacity(0.80)
+                    .blendMode(.screen)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .strokeBorder(Color.oldOS(19, 30, 58), lineWidth: 1)
+                    )
+                    .frame(height: 40)
+                    .padding(.bottom, 8)
+                    .padding([.leading, .trailing], 8)
+
+                Text(text)
+                    .font(OldOSFont.bold(18))
+                    .foregroundColor(.white)
+                    .shadow(color: Color.black.opacity(0.80), radius: 0, x: 0, y: -1.2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
+                    .padding(.bottom, 8)
+                    .padding([.leading, .trailing], 10)
+            }
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - OldOS alert shape helpers (ported)
+
+/// Port of OldOS' `top_gloss` shape.
+struct OldOSTopGloss: Shape {
+    var length: CGFloat
+    var startX: CGFloat = 0
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let midPoint: CGFloat = (startX + length) / 2
+        path.move(to: CGPoint(x: midPoint, y: 0))
+        path.addLine(to: CGPoint(x: 0, y: 0))
+        path.addLine(to: CGPoint(x: 0, y: 20))
+        path.addQuadCurve(to: CGPoint(x: length, y: 20), control: CGPoint(x: midPoint, y: 40))
+        path.addLine(to: CGPoint(x: length, y: 0))
+        path.closeSubpath()
+        return path
+    }
+}
+
+/// Rounds only the given corners, replacing OldOS' `cornerRadiusSpecific`.
+struct OldOSRoundedCorner: Shape {
+    var radius: CGFloat
+    var corners: UIRectCorner
+
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(
+            roundedRect: rect,
+            byRoundingCorners: corners,
+            cornerRadii: CGSize(width: radius, height: radius)
+        )
+        return Path(path.cgPath)
     }
 }
