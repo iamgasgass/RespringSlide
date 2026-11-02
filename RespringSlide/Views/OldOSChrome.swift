@@ -18,8 +18,17 @@ struct OldOSTitleBar: View {
                 .oldOSBorder(width: 1, edges: [.bottom], color: theme.barHairline)
                 .oldOSInnerShadowBottom(color: theme.barHighlight, radius: 0.025)
                 // Share-sheet style hairlines: white on top, black on bottom.
-                .oldOSBorder(width: 1, edges: [.top], color: Color.white.opacity(0.22))
+                .oldOSBorder(width: 1, edges: [.top], color: Color.white.opacity(0.5))
                 .oldOSBorder(width: 1, edges: [.bottom], color: Color.black.opacity(0.7))
+
+            // Hairline at the top of the visible bar (just below the status
+            // bar), white over black — the same as elsewhere, above the title.
+            VStack(spacing: 0) {
+                Rectangle().fill(Color.white.opacity(0.5)).frame(height: 1)
+                Rectangle().fill(Color.black.opacity(0.6)).frame(height: 1)
+                Spacer(minLength: 0)
+            }
+            .frame(height: 60)
 
             Text(title)
                 .font(OldOSFont.bold(22))

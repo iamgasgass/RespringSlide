@@ -53,7 +53,7 @@ struct OldOSPowerOffView: View {
                     OldOSTitleBar(
                         title: "RespringSlide",
                         theme: barTheme,
-                        topInset: max(OldOSScreen.safeArea.top, 20)
+                        topInset: max(geometry.safeAreaInsets.top, 20)
                     )
 
                     // Top full-width translucent band (same size as before).
@@ -73,7 +73,7 @@ struct OldOSPowerOffView: View {
                     VStack(spacing: 0) {
                         cancelButton(width: trackWidth)
                             .padding(.top, 16)
-                            .padding(.bottom, max(OldOSScreen.safeArea.bottom, 12) + 62)
+                            .padding(.bottom, max(geometry.safeAreaInsets.bottom, 12) + 62)
                     }
                     .frame(maxWidth: .infinity)
                     .background(translucentBand)
@@ -171,7 +171,7 @@ struct OldOSPowerOffView: View {
         .frame(width: width, height: height)
         // Gesture on the whole track so it works reliably, including on launch.
         .contentShape(Rectangle())
-        .gesture(
+        .highPriorityGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { value in
                     guard !isRunning else { return }
