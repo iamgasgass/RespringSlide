@@ -21,6 +21,16 @@ struct OldOSPowerOffView: View {
     private var buttonType: OldOSButtonType { isDark ? .black : .gray }
     private var barTheme: OldOSSafariTheme { OldOSSafariTheme.theme(isPrivate: isDark) }
 
+    /// The dark sheet-metal band of OldSafari's share sheet, used as the top and
+    /// bottom bands of the Respring screen. Dark in both appearances.
+    private var sheetBand: some View {
+        Rectangle()
+            .fill(LinearGradient(oldOS: barTheme.shareBody))
+            .oldOSInnerShadowBottom(color: Color.white.opacity(0.6), radius: 0.04)
+            .oldOSBorder(width: 1, edges: [.top], color: Color.white.opacity(0.12))
+            .oldOSBorder(width: 1, edges: [.bottom], color: Color.black.opacity(0.6))
+    }
+
     var body: some View {
         GeometryReader { geometry in
             let w = geometry.size.width
@@ -40,16 +50,26 @@ struct OldOSPowerOffView: View {
                         topInset: max(OldOSScreen.safeArea.top, 20)
                     )
 
-                    respringIndicator
-                        .padding(.top, 24)
-
-                    slideToPowerOff(width: trackWidth, height: trackHeight)
-                        .padding(.top, 26)
+                    // Top dark "sheet" band (OldSafari share-sheet style).
+                    VStack(spacing: 0) {
+                        respringIndicator
+                            .padding(.top, 18)
+                        slideToPowerOff(width: trackWidth, height: trackHeight)
+                            .padding(.top, 20)
+                            .padding(.bottom, 22)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .background(sheetBand)
 
                     Spacer(minLength: 0)
 
-                    cancelButton(width: trackWidth)
-                        .padding(.bottom, 20)
+                    // Bottom dark "sheet" band holding the cancel button.
+                    VStack(spacing: 0) {
+                        cancelButton(width: trackWidth)
+                            .padding(.vertical, 16)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .background(sheetBand)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea(edges: .top)
@@ -190,8 +210,8 @@ struct OldOSPowerOffView: View {
                     .strokeBorder(Color.oldOS(130, 10, 16), lineWidth: 1))
                 .shadow(color: .black.opacity(0.45), radius: 1.5, x: 0, y: 1)
 
-            Image(systemName: "arrow.right")
-                .font(.system(size: size * 0.42, weight: .bold))
+            Text("⮕")
+                .font(.custom("Helvetica Neue", fixedSize: size * 0.56))
                 .foregroundStyle(.white)
                 .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: -1)
         }
