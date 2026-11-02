@@ -17,6 +17,9 @@ struct OldOSTitleBar: View {
             LinearGradient(oldOS: theme.barGradient)
                 .oldOSBorder(width: 1, edges: [.bottom], color: theme.barHairline)
                 .oldOSInnerShadowBottom(color: theme.barHighlight, radius: 0.025)
+                // Share-sheet style hairlines: white on top, black on bottom.
+                .oldOSBorder(width: 1, edges: [.top], color: Color.white.opacity(0.22))
+                .oldOSBorder(width: 1, edges: [.bottom], color: Color.black.opacity(0.7))
 
             Text(title)
                 .font(OldOSFont.bold(22))

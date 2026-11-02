@@ -63,16 +63,18 @@ struct OldOSPowerOffView: View {
 
                     Spacer(minLength: 0)
 
-                    // Bottom dark "sheet" band holding the cancel button.
+                    // Bottom dark "sheet" band holding the cancel button; the
+                    // sheet extends to the very bottom (behind the tab bar).
                     VStack(spacing: 0) {
                         cancelButton(width: trackWidth)
-                            .padding(.vertical, 16)
+                            .padding(.top, 16)
+                            .padding(.bottom, max(OldOSScreen.safeArea.bottom, 12) + 62)
                     }
                     .frame(maxWidth: .infinity)
                     .background(sheetBand)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .ignoresSafeArea(edges: .top)
+                .ignoresSafeArea(edges: [.top, .bottom])
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .overlay {
@@ -158,31 +160,34 @@ struct OldOSPowerOffView: View {
             redArrowKnob(size: knobSize)
                 .padding(inset)
                 .offset(x: sliderOffset)
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { value in
-                            guard !isRunning else { return }
-                            sliderOffset = min(max(value.translation.width, 0), travel)
-                        }
-                        .onEnded { _ in
-                            guard !isRunning else { return }
-                            if travel > 0 && sliderOffset >= travel * CGFloat(settings.threshold) {
-                                settings.tap(.medium)
-                                withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
-                                    sliderOffset = travel
-                                }
-                                armOrConfirm()
-                            } else {
-                                withAnimation(.spring(response: 0.42, dampingFraction: 0.76)) {
-                                    sliderOffset = 0
-                                }
-                            }
-                        }
-                )
                 .accessibilityLabel("Scorri per respring")
                 .accessibilityHint("Trascina fino all'estremità destra per avviare il respring")
         }
         .frame(width: width, height: height)
+        // Gesture on the whole track so it works reliably, including on launch.
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    guard !isRunning else { return }
+                    let x = value.location.x - inset - knobSize / 2
+                    sliderOffset = min(max(x, 0), travel)
+                }
+                .onEnded { _ in
+                    guard !isRunning else { return }
+                    if travel > 0 && sliderOffset >= travel * CGFloat(settings.threshold) {
+                        settings.tap(.medium)
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
+                            sliderOffset = travel
+                        }
+                        armOrConfirm()
+                    } else {
+                        withAnimation(.spring(response: 0.42, dampingFraction: 0.76)) {
+                            sliderOffset = 0
+                        }
+                    }
+                }
+        )
     }
 
     /// The red glossy knob with the white arrow, as on the iOS 6 slide to power
