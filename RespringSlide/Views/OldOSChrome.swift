@@ -1,12 +1,15 @@
 import SwiftUI
 
-/// Ported code-for-code from OldSafari's `OldOSTitleBar` (SafariControls.swift):
-/// the bar gradient, the 1pt bottom hairline, the top inner-shadow highlight,
-/// and the Helvetica Neue Bold 22 title with its hard `titleBarTitleShadow`.
+/// Ported code-for-code from OldSafari's `OldOSTitleBar` (SafariControls.swift)
+/// and OldOS' `generic_title_bar`: the bar gradient, the 1pt bottom hairline,
+/// the top inner-shadow glossy highlight, and the Helvetica Neue Bold 22 title
+/// with its emboss + hard `titleBarTitleShadow`.
 ///
-/// The only addition is `topInset`, which lets the bar extend full-screen up
-/// under the status bar / Dynamic Island on modern iOS, with the title kept
-/// centred in the bottom 60pt (exactly OldSafari's bar height).
+/// `topInset` lets the bar extend full-screen up under the status bar / Dynamic
+/// Island on modern iOS. Crucially, the glossy OldSafari chrome (full gradient
+/// + sheen + hairlines) is rendered on the visible bottom 60pt (OldSafari's bar
+/// height), while the status-bar area is filled with the gradient's light top
+/// colour — so the gloss shows on the bar, not hidden under the status bar.
 struct OldOSTitleBar: View {
     let title: String
     let theme: OldOSSafariTheme
@@ -14,31 +17,35 @@ struct OldOSTitleBar: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            LinearGradient(oldOS: theme.barGradient)
-                .oldOSBorder(width: 1, edges: [.bottom], color: theme.barHairline)
-                .oldOSInnerShadowBottom(color: theme.barHighlight, radius: 0.025)
-                // Share-sheet style hairlines: white on top, black on bottom.
-                .oldOSBorder(width: 1, edges: [.top], color: Color.white.opacity(0.5))
-                .oldOSBorder(width: 1, edges: [.bottom], color: Color.black.opacity(0.7))
+            // Status-bar extension: the gradient's top (lightest) colour.
+            (theme.barGradient.first?.color ?? .black)
 
-            // Hairline at the top of the visible bar (just below the status
-            // bar), white over black — the same as elsewhere, above the title.
-            VStack(spacing: 0) {
-                Rectangle().fill(Color.white.opacity(0.5)).frame(height: 1)
-                Rectangle().fill(Color.black.opacity(0.6)).frame(height: 1)
-                Spacer(minLength: 0)
+            // The visible 60pt OldSafari bar: full glossy gradient + sheen.
+            ZStack(alignment: .top) {
+                LinearGradient(oldOS: theme.barGradient)
+                    .oldOSInnerShadowBottom(color: theme.barHighlight, radius: 0.025)
+
+                // Hairlines at the top of the visible bar (white over black).
+                VStack(spacing: 0) {
+                    Rectangle().fill(Color.white.opacity(0.22)).frame(height: 1)
+                    Rectangle().fill(Color.black.opacity(0.6)).frame(height: 1)
+                    Spacer(minLength: 0)
+                }
+
+                Text(title)
+                    .font(OldOSFont.bold(22))
+                    .foregroundColor(theme.titleBarTitle)
+                    // Emboss (OldOS `ps_innerShadow(white, …0.07)`) + hard shadow.
+                    .shadow(color: theme.titleBarTitleEmboss, radius: 0, x: 0, y: 1)
+                    .shadow(color: theme.titleBarTitleShadow, radius: 0, x: 0, y: -1)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .frame(height: 60)
-
-            Text(title)
-                .font(OldOSFont.bold(22))
-                .foregroundColor(theme.titleBarTitle)
-                // Emboss (OldOS `ps_innerShadow(white, …0.07)`) + hard shadow.
-                .shadow(color: theme.titleBarTitleEmboss, radius: 0, x: 0, y: 1)
-                .shadow(color: theme.titleBarTitleShadow, radius: 0, x: 0, y: -1)
-                .lineLimit(1)
-                .frame(height: 60)
+            .oldOSBorder(width: 1, edges: [.bottom], color: theme.barHairline)
+            .oldOSBorder(width: 1, edges: [.bottom], color: Color.black.opacity(0.7))
         }
         .frame(height: topInset + 60)
+        .oldOSBorder(width: 1, edges: [.top], color: Color.white.opacity(0.22))
     }
 }

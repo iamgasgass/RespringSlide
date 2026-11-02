@@ -74,7 +74,8 @@ struct RootPowerView: View {
                 .opacity(isRunning ? 0.35 : 1)
                 .padding(.trailing, 18)
             }
-            .padding(.top, 8)
+            // In OldOS, centre the "…" vertically with the bar title.
+            .padding(.top, settings.skin == .oldOS ? 14 : 8)
             Spacer()
         }
     }
