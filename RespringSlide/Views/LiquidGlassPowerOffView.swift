@@ -26,61 +26,60 @@ struct LiquidGlassPowerOffView: View {
     private var vignette: Color { isDark ? Color.white.opacity(0.035) : Color.black.opacity(0.04) }
 
     var body: some View {
-        GeometryReader { geometry in
-            let w = geometry.size.width
-            let trackWidth = min(w - 44, 560)
-            let trackHeight: CGFloat = 74
+        // Same mechanism as the native Settings: a NavigationStack with a large
+        // navigation title, so the "RespringSlide" header is literally the
+        // native large title.
+        NavigationStack {
+            GeometryReader { geometry in
+                let w = geometry.size.width
+                let trackWidth = min(w - 44, 560)
+                let trackHeight: CGFloat = 74
 
-            ZStack {
-                background.ignoresSafeArea()
+                ZStack {
+                    background.ignoresSafeArea()
 
-                RadialGradient(
-                    colors: [vignette, .clear],
-                    center: .top,
-                    startRadius: 12,
-                    endRadius: geometry.size.height * 0.72
-                )
-                .ignoresSafeArea()
+                    RadialGradient(
+                        colors: [vignette, .clear],
+                        center: .top,
+                        startRadius: 12,
+                        endRadius: geometry.size.height * 0.72
+                    )
+                    .ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    // Large navigation title, exactly like the native Settings.
-                    Text("RespringSlide")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundStyle(glyphColor)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
+                    VStack(spacing: 0) {
+                        respringIndicator
+                            .padding(.top, 12)
 
-                    respringIndicator
-                        .padding(.top, 24)
+                        slideControl(width: trackWidth, height: trackHeight)
+                            .padding(.top, 26)
 
-                    slideControl(width: trackWidth, height: trackHeight)
-                        .padding(.top, 26)
+                        Spacer(minLength: 0)
 
-                    Spacer(minLength: 0)
-
-                    cancelButton
-                        .frame(width: 64, height: 64)
-                        .padding(.bottom, 20)
+                        cancelButton
+                            .frame(width: 64, height: 64)
+                            .padding(.bottom, 20)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .confirmationDialog(
-                "Avviare il respring?",
-                isPresented: $showingConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button("Avvia respring", role: .destructive) {
-                    onArmed()
+                .confirmationDialog(
+                    "Avviare il respring?",
+                    isPresented: $showingConfirmation,
+                    titleVisibility: .visible
+                ) {
+                    Button("Avvia respring", role: .destructive) {
+                        onArmed()
+                    }
+                    Button("Annulla", role: .cancel) {
+                        resetSlider()
+                    }
+                } message: {
+                    Text("La tecnica può bloccare WebKit o riavviare SpringBoard, ma non è garantita su ogni versione di iOS. Salva prima il tuo lavoro.")
                 }
-                Button("Annulla", role: .cancel) {
-                    resetSlider()
-                }
-            } message: {
-                Text("La tecnica può bloccare WebKit o riavviare SpringBoard, ma non è garantita su ogni versione di iOS. Salva prima il tuo lavoro.")
             }
+            .navigationTitle("RespringSlide")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(.hidden, for: .navigationBar)
         }
     }
 

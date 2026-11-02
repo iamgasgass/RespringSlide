@@ -21,6 +21,8 @@ struct OldOSTitleBar: View {
             Text(title)
                 .font(OldOSFont.bold(22))
                 .foregroundColor(theme.titleBarTitle)
+                // Emboss (OldOS `ps_innerShadow(white, …0.07)`) + hard shadow.
+                .shadow(color: theme.titleBarTitleEmboss, radius: 0, x: 0, y: 1)
                 .shadow(color: theme.titleBarTitleShadow, radius: 0, x: 0, y: -1)
                 .lineLimit(1)
                 .frame(height: 60)
