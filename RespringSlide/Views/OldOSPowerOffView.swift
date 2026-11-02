@@ -21,14 +21,22 @@ struct OldOSPowerOffView: View {
     private var buttonType: OldOSButtonType { isDark ? .black : .gray }
     private var barTheme: OldOSSafariTheme { OldOSSafariTheme.theme(isPrivate: isDark) }
 
-    /// The dark sheet-metal band of OldSafari's share sheet, used as the top and
-    /// bottom bands of the Respring screen. Dark in both appearances.
-    private var sheetBand: some View {
-        Rectangle()
-            .fill(LinearGradient(oldOS: barTheme.shareBody))
-            .oldOSInnerShadowBottom(color: Color.white.opacity(0.6), radius: 0.04)
-            .oldOSBorder(width: 1, edges: [.top], color: Color.white.opacity(0.12))
-            .oldOSBorder(width: 1, edges: [.bottom], color: Color.black.opacity(0.6))
+    /// The dark half-transparent rounded "sheet" band, as on the iOS 6 slide to
+    /// power off screen — used around the slider and the cancel button. Dark in
+    /// both appearances; the background shows faintly through.
+    private var imageBand: some View {
+        RoundedRectangle(cornerRadius: 13)
+            .fill(Color.black.opacity(0.72))
+            .overlay(
+                RoundedRectangle(cornerRadius: 13)
+                    .fill(LinearGradient(colors: [Color.white.opacity(0.10), .clear],
+                                         startPoint: .top, endPoint: .center))
+                    .padding(1)
+                    .allowsHitTesting(false)
+            )
+            .overlay(RoundedRectangle(cornerRadius: 13).strokeBorder(Color.white.opacity(0.18), lineWidth: 0.75).padding(0.5))
+            .overlay(RoundedRectangle(cornerRadius: 13).strokeBorder(Color.black.opacity(0.6), lineWidth: 1))
+            .shadow(color: .black.opacity(0.4), radius: 2, x: 0, y: 1)
     }
 
     var body: some View {
@@ -50,31 +58,26 @@ struct OldOSPowerOffView: View {
                         topInset: max(OldOSScreen.safeArea.top, 20)
                     )
 
-                    // Top dark "sheet" band (OldSafari share-sheet style).
-                    VStack(spacing: 0) {
-                        respringIndicator
-                            .padding(.top, 18)
-                        slideToPowerOff(width: trackWidth, height: trackHeight)
-                            .padding(.top, 20)
-                            .padding(.bottom, 22)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .background(sheetBand)
+                    respringIndicator
+                        .padding(.top, 22)
+
+                    // The slider (lock_footer track) sits on the dark
+                    // translucent band — the band is under/around the track.
+                    slideToPowerOff(width: trackWidth, height: trackHeight)
+                        .padding(10)
+                        .background(imageBand)
+                        .padding(.top, 16)
 
                     Spacer(minLength: 0)
 
-                    // Bottom dark "sheet" band holding the cancel button; the
-                    // sheet extends to the very bottom (behind the tab bar).
-                    VStack(spacing: 0) {
-                        cancelButton(width: trackWidth)
-                            .padding(.top, 16)
-                            .padding(.bottom, max(OldOSScreen.safeArea.bottom, 12) + 62)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .background(sheetBand)
+                    // The cancel button on its matching dark band.
+                    cancelButton(width: trackWidth - 20)
+                        .padding(8)
+                        .background(imageBand)
+                        .padding(.bottom, 16)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .ignoresSafeArea(edges: [.top, .bottom])
+                .ignoresSafeArea(edges: .top)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .overlay {
