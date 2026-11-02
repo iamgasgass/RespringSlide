@@ -86,7 +86,7 @@ struct OldOSSettingsView: View {
     }
 
     private var resetSection: some View {
-        section(header: nil, footer: nil) {
+        VStack(spacing: 0) {
             Button {
                 settings.tap(.medium)
                 settings.requireConfirmation = true
@@ -95,18 +95,29 @@ struct OldOSSettingsView: View {
                 settings.appearance = .system
                 settings.skin = .liquidGlass
             } label: {
-                HStack {
-                    Spacer()
-                    Text("Ripristina impostazioni")
-                        .font(OldOSFont.bold(17))
-                        .foregroundColor(.oldOS(189, 20, 33))
-                    Spacer()
-                }
-                .frame(height: 44)
-                .contentShape(Rectangle())
+                Text("Ripristina impostazioni")
+                    .font(OldOSFont.bold(17))
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.4), radius: 0, x: 0, y: -0.5)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(oldOSButtonGradient(.red))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(LinearGradient(colors: [Color.white.opacity(0.28), .clear],
+                                                         startPoint: .top, endPoint: .center))
+                                    .padding(1)
+                            )
+                            .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Color.oldOS(120, 10, 16), lineWidth: 1))
+                    )
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .padding(.horizontal, 14)
         }
+        .padding(.bottom, 22)
     }
 
     private var infoSection: some View {

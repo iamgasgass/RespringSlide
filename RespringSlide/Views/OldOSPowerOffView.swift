@@ -17,10 +17,6 @@ struct OldOSPowerOffView: View {
     @State private var showingAlert = false
 
     private var isDark: Bool { colorScheme == .dark }
-    private var background: Color { isDark ? .black : Color(white: 0.92) }
-    private var vignette: Color {
-        isDark ? Color.oldOS(42, 44, 48).opacity(0.55) : Color.black.opacity(0.06)
-    }
     /// Classic OldSafari aluminium buttons in light mode, graphite in dark.
     private var buttonType: OldOSButtonType { isDark ? .black : .gray }
     private var barTheme: OldOSSafariTheme { OldOSSafariTheme.theme(isPrivate: isDark) }
@@ -32,12 +28,10 @@ struct OldOSPowerOffView: View {
             let trackHeight: CGFloat = 86
 
             ZStack {
-                background.ignoresSafeArea()
-                RadialGradient(
-                    colors: [vignette, .clear],
-                    center: .top, startRadius: 8, endRadius: geometry.size.height * 0.8
-                )
-                .ignoresSafeArea()
+                // Same grouped pinstripe background as the OldOS Settings.
+                barTheme.groupedBackground.ignoresSafeArea()
+                OldOSPinstripeBackground(line: barTheme.groupedPinstripe)
+                    .ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     OldOSTitleBar(
@@ -101,35 +95,31 @@ struct OldOSPowerOffView: View {
         .background(iOS6GlossCapsule(type: buttonType))
     }
 
-    // MARK: - Slide to power off (OldOS `lock_footer` slider, in red)
-
-    /// The OldOS track border/knob gradient, `[83…143]`, shared by track and
-    /// knob so the whole slider matches — exactly as in `lock_footer`.
-    private var oldOSBorderGradient: LinearGradient {
-        LinearGradient(oldOS: [
-            OldOSStop(.oldOS(83, 83, 83), 0),
-            OldOSStop(.oldOS(143, 143, 143), 1)
-        ])
-    }
+    // MARK: - Slide to power off (authentic iOS 6: dark skeuo band + red arrow)
 
     private func slideToPowerOff(width: CGFloat, height: CGFloat) -> some View {
-        let knobWidth: CGFloat = 75
-        let inset: CGFloat = 6
-        let travel = max(0, width - knobWidth - inset * 2)
+        let inset: CGFloat = 4
+        let knobSize = height - inset * 2
+        let travel = max(0, width - knobSize - inset * 2)
 
         return ZStack(alignment: .leading) {
-            // OldOS track: exactly the lock_footer dark rounded rect + [83…143]
-            // stroke (not red).
-            RoundedRectangle(cornerRadius: 12)
-                .fill(LinearGradient(oldOS: [
-                    OldOSStop(.oldOS(3, 3, 3), 0),
-                    OldOSStop(.oldOS(21, 21, 21), 0.5),
-                    OldOSStop(.oldOS(32, 32, 32), 1)
-                ]))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(oldOSBorderGradient, lineWidth: 0.5)
-                )
+            // iOS 6 dark half-transparent skeuomorphic band (same in both modes).
+            OldOSInnerShadow(
+                shape: RoundedRectangle(cornerRadius: 13),
+                fill: Color.black.opacity(0.72),
+                radius: 3,
+                offset: CGPoint(x: 0, y: 1.5),
+                intensity: 0.9
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 13)
+                    .fill(LinearGradient(colors: [Color.white.opacity(0.10), .clear],
+                                         startPoint: .top, endPoint: .center))
+                    .padding(1)
+                    .allowsHitTesting(false)
+            )
+            .overlay(RoundedRectangle(cornerRadius: 13).strokeBorder(Color.white.opacity(0.18), lineWidth: 0.75).padding(0.5))
+            .overlay(RoundedRectangle(cornerRadius: 13).strokeBorder(Color.black.opacity(0.55), lineWidth: 1))
 
             // Single "Scorri per respring" label, centred, continuous shine.
             Group {
@@ -138,17 +128,17 @@ struct OldOSPowerOffView: View {
                         .font(OldOSFont.bold(23))
                         .foregroundColor(.white.opacity(0.9))
                         .lineLimit(1)
-                        .shadow(color: .black.opacity(0.5), radius: 0, x: 0, y: -1)
+                        .shadow(color: .black.opacity(0.6), radius: 1, x: 0, y: 1)
                 } else {
-                    ShineText(text: "Scorri per respring", font: OldOSFont.bold(23), baseOpacity: 0.45)
-                        .shadow(color: .black.opacity(0.4), radius: 0, x: 0, y: -1)
+                    ShineText(text: "Scorri per respring", font: OldOSFont.bold(23), baseOpacity: 0.5)
+                        .shadow(color: .black.opacity(0.6), radius: 1, x: 0, y: 1)
                 }
             }
             .frame(width: width, height: height)
             .allowsHitTesting(false)
 
-            // OldOS metallic knob (the ⮕ "freccia"), in red, same [83…143] border.
-            oldOSKnob(width: knobWidth, height: height - inset * 2)
+            // Red glossy knob with the white arrow (the whole "freccia" component).
+            redArrowKnob(size: knobSize)
                 .padding(inset)
                 .offset(x: sliderOffset)
                 .gesture(
@@ -178,40 +168,34 @@ struct OldOSPowerOffView: View {
         .frame(width: width, height: height)
     }
 
-    /// OldOS `lock_footer` knob, ported in red: metallic red base + top gloss
-    /// half + the `⮕` glyph, with the shared `[83…143]` border.
-    private func oldOSKnob(width: CGFloat, height: CGFloat) -> some View {
+    /// The red glossy knob with the white arrow, as on the iOS 6 slide to power
+    /// off. Glossy top half + darker bottom, dark red border, white arrow.
+    private func redArrowKnob(size: CGFloat) -> some View {
         ZStack {
-            ZStack(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(LinearGradient(oldOS: [
-                        OldOSStop(.oldOS(226, 86, 90), 0),
-                        OldOSStop(.oldOS(176, 32, 40), 1)
-                    ]))
-                GeometryReader { geo in
-                    Rectangle()
-                        .fill(LinearGradient(oldOS: [
-                            OldOSStop(.oldOS(244, 150, 154), 0),
-                            OldOSStop(.oldOS(224, 108, 114), 1)
-                        ]))
-                        .frame(width: width, height: geo.size.height / 2, alignment: .top)
-                        .clipped()
-                }
-            }
-            Text("⮕")
-                .font(.custom("Helvetica Neue", fixedSize: 39))
-                .foregroundStyle(LinearGradient(oldOS: [
-                    OldOSStop(.oldOS(255, 255, 255), 0.5),
-                    OldOSStop(.oldOS(238, 238, 238), 0.5)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(LinearGradient(oldOS: [
+                    OldOSStop(.oldOS(236, 96, 100), 0),
+                    OldOSStop(.oldOS(212, 42, 48), 0.49),
+                    OldOSStop(.oldOS(186, 16, 24), 0.5),
+                    OldOSStop(.oldOS(200, 28, 34), 1)
                 ]))
-                .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: 1)
+                .overlay(
+                    // Glossy top-half sheen.
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(LinearGradient(colors: [Color.white.opacity(0.45), .clear],
+                                             startPoint: .top, endPoint: .center))
+                        .padding(1)
+                )
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(Color.oldOS(130, 10, 16), lineWidth: 1))
+                .shadow(color: .black.opacity(0.45), radius: 1.5, x: 0, y: 1)
+
+            Image(systemName: "arrow.right")
+                .font(.system(size: size * 0.42, weight: .bold))
+                .foregroundStyle(.white)
+                .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: -1)
         }
-        .frame(width: width, height: height)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(oldOSBorderGradient, lineWidth: 0.5)
-        )
+        .frame(width: size, height: size)
     }
 
     // MARK: - Cancel
