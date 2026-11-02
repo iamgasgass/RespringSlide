@@ -123,23 +123,20 @@ struct OldOSPowerOffView: View {
         let travel = max(0, width - knobSize - inset * 2)
 
         return ZStack(alignment: .leading) {
-            // iOS 6 dark half-transparent skeuomorphic band (same in both modes).
-            OldOSInnerShadow(
-                shape: RoundedRectangle(cornerRadius: 13),
-                fill: Color.black.opacity(0.72),
-                radius: 3,
-                offset: CGPoint(x: 0, y: 1.5),
-                intensity: 0.9
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 13)
-                    .fill(LinearGradient(colors: [Color.white.opacity(0.10), .clear],
-                                         startPoint: .top, endPoint: .center))
-                    .padding(1)
-                    .allowsHitTesting(false)
-            )
-            .overlay(RoundedRectangle(cornerRadius: 13).strokeBorder(Color.white.opacity(0.18), lineWidth: 0.75).padding(0.5))
-            .overlay(RoundedRectangle(cornerRadius: 13).strokeBorder(Color.black.opacity(0.55), lineWidth: 1))
+            // Track exactly as before: lock_footer dark rounded rect + [83…143].
+            RoundedRectangle(cornerRadius: 12)
+                .fill(LinearGradient(oldOS: [
+                    OldOSStop(.oldOS(3, 3, 3), 0),
+                    OldOSStop(.oldOS(21, 21, 21), 0.5),
+                    OldOSStop(.oldOS(32, 32, 32), 1)
+                ]))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(LinearGradient(oldOS: [
+                            OldOSStop(.oldOS(83, 83, 83), 0),
+                            OldOSStop(.oldOS(143, 143, 143), 1)
+                        ]), lineWidth: 0.5)
+                )
 
             // Single "Scorri per respring" label, centred, continuous shine.
             Group {
