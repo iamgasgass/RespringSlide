@@ -76,7 +76,7 @@ struct OldOSThemeMenuPanel: View {
             let right = geometry.size.width - 18
             let left = max(right - panelWidth, 12)
             let pointerX = right - 26 // roughly the button centre
-            let top = topInset + 8 + 32 + 6 // below the button
+            let top = topInset + 14 + 32 + 6 // below the button (centred on the 60pt bar)
 
             ZStack(alignment: .topLeading) {
                 theme.scrim.opacity(0.4)
