@@ -1,15 +1,17 @@
 import SwiftUI
 
-/// Ported code-for-code from OldSafari's title bar (SafariControls.swift) and
-/// OldOS' `generic_title_bar`: the bar gradient, the top inner-shadow glossy
-/// highlight, the 1pt bottom hairline and the Helvetica Neue Bold 22 title
-/// with its emboss + hard `titleBarTitleShadow`.
+/// Ported code-for-code from OldSafari's `OldOSTitleBar` (SafariControls.swift)
+/// and its full-screen chrome (SafariRootView.swift `chrome`):
 ///
-/// Full screen exactly like OldSafari: ONE gradient runs from the top of the
-/// screen (behind the status bar / Dynamic Island) to the bottom of the bar,
-/// so the status-bar area and the bar are a single piece of chrome, with no
-/// band or line between them. The glossy highlight and the title sit on the
-/// visible 60pt bar below the status bar.
+/// - the 60pt bar draws its OWN `LinearGradient(oldOS: theme.barGradient)`,
+///   so the glossy split of the gradient (the 0.49 stop) falls in the middle
+///   of the bar exactly like OldSafari, with the 1pt `barHairline` at the
+///   bottom and the `oldOSInnerShadowBottom(barHighlight, 0.025)` sheen at
+///   the top;
+/// - behind it, the chrome background is another `barGradient` running
+///   from the top of the screen (status bar / Dynamic Island) down to the
+///   bottom of the bar, as in OldSafari's `chrome.background`;
+/// - Helvetica Neue Bold 22 title with the hard `titleBarTitleShadow`.
 struct OldOSTitleBar: View {
     let title: String
     let theme: OldOSSafariTheme
@@ -18,25 +20,26 @@ struct OldOSTitleBar: View {
     var body: some View {
         VStack(spacing: 0) {
             Color.clear.frame(height: topInset)
-            Text(title)
-                .font(OldOSFont.bold(22))
-                .foregroundColor(theme.titleBarTitle)
-                // Emboss (OldOS `ps_innerShadow(white, …0.07)`) + hard shadow.
-                .shadow(color: theme.titleBarTitleEmboss, radius: 0, x: 0, y: 1)
-                .shadow(color: theme.titleBarTitleShadow, radius: 0, x: 0, y: -1)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity)
-                .frame(height: 60)
-        }
-        .background(
-            VStack(spacing: 0) {
-                Color.clear.frame(height: topInset)
-                Color.clear
-                    .frame(height: 60)
+
+            // OldSafari `OldOSTitleBar`.
+            ZStack {
+                LinearGradient(oldOS: theme.barGradient)
+                    .oldOSBorder(width: 1, edges: [.bottom], color: theme.barHairline)
                     .oldOSInnerShadowBottom(color: theme.barHighlight, radius: 0.025)
+
+                Text(title)
+                    .font(OldOSFont.bold(22))
+                    .foregroundColor(theme.titleBarTitle)
+                    .shadow(color: theme.titleBarTitleShadow, radius: 0, x: 0, y: -1)
+                    .lineLimit(1)
+                    .padding([.leading, .trailing], 74)
             }
-            .background(LinearGradient(oldOS: theme.barGradient))
+            .frame(height: 60)
+        }
+        // OldSafari `chrome.background`: the bar gradient behind the status bar.
+        .background(
+            LinearGradient(oldOS: theme.barGradient)
+                .ignoresSafeArea(edges: .top)
         )
-        .oldOSBorder(width: 1, edges: [.bottom], color: theme.barHairline)
     }
 }
